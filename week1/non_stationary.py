@@ -111,14 +111,14 @@ def run_non_stationary(n_runs: int = 2000, n_plays: int = 10000):
     plt.plot(avg_reward_ca, label="Constant α=0.1", color="red")
     plt.xlabel("Plays")
     plt.ylabel("Average Reward")
-    plt.title("실습 #3: Non-Stationary Bandit\nSample Average vs Constant Step-Size")
+    plt.title("Practice #3: Non-Stationary Bandit\nSample Average vs Constant Step-Size")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     output_path = Path(__file__).parent / "non_stationary_result.png"
     plt.savefig(output_path, dpi=150)
     plt.show()
-    print(f"그래프가 {output_path}로 저장되었습니다.")
+    print(f"Graph saved to {output_path}")
 
 
 if __name__ == "__main__":

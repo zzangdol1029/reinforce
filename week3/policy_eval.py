@@ -1,10 +1,12 @@
+# 실습 #1 policy_eval.py
+
 from collections import defaultdict
 from gridworld import GridWorld
 
 
 def eval_onestep(pi, V, env, gamma=0.9):
-    for state in env.states(): # 각 상태에 접근
-        if state == env.goal_state: # 2 목표 상태에서의 가치 함수는 항상 0
+    for state in env.states():  # 각 상태에 접근
+        if state == env.goal_state:  # 2 목표 상태에서의 가치 함수는 항상 0
             V[state] = 0
             continue
 
@@ -24,7 +26,7 @@ def eval_onestep(pi, V, env, gamma=0.9):
 
 def policy_eval(pi, V, env, gamma, threshold=0.001):
     while True:
-        old_V = V.copy() # 갱신 전 가치 함수
+        old_V = V.copy()  # 갱신 전 가치 함수
         V = eval_onestep(pi, V, env, gamma)
 
         # 갱신된 양의 최댓값 계산
@@ -40,16 +42,14 @@ def policy_eval(pi, V, env, gamma, threshold=0.001):
     return V
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     env = GridWorld()
-    gamma = 0.9 # 할인율
+    gamma = 0.9  # 할인율
 
-    pi = defaultdict(lambda: {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}) # 정책
-    V = defaultdict(lambda: 0) # 가치 함수
-    for s in env.states():
-        V[s] = 0
+    pi = defaultdict(lambda: {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25})  # 정책
+    V = defaultdict(lambda: 0)  # 가치 함수
 
-    V = policy_eval(pi, V, env, gamma) # 정책 평가
+    V = policy_eval(pi, V, env, gamma)  # 정책 평가
 
     # [그림 4-13] 무작위 정책의 가치 함수
     env.render_v(V, pi)

@@ -61,14 +61,14 @@ def run_bandit_average(n_runs: int = 2000, n_plays: int = 1000, n_arms: int = 10
     plt.subplot(1, 2, 1)
     plt.xlabel("Plays")
     plt.ylabel("Average Reward")
-    plt.title("실습 #2: Average Reward over 2000 runs")
+    plt.title("Practice #2: Average Reward over 2000 runs")
     plt.legend()
     plt.grid(True, alpha=0.3)
 
     plt.subplot(1, 2, 2)
     plt.xlabel("Plays")
     plt.ylabel("Average Reward")
-    plt.title("실습 #2: Average Reward (확대)")
+    plt.title("Practice #2: Average Reward (Zoomed)")
     plt.legend()
     plt.grid(True, alpha=0.3)
 
@@ -76,7 +76,7 @@ def run_bandit_average(n_runs: int = 2000, n_plays: int = 1000, n_arms: int = 10
     output_path = Path(__file__).parent / "bandit_avg_result.png"
     plt.savefig(output_path, dpi=150)
     plt.show()
-    print(f"그래프가 {output_path}로 저장되었습니다.")
+    print(f"Graph saved to {output_path}")
 
 
 def demo_single_run():
