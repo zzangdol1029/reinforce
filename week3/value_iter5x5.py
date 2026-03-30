@@ -99,14 +99,31 @@ def value_iter_onestep(V, env, gamma):
     return V
 
 
+def _pick_snapshot_indices(n_snapshots, min_panels=5):
+    """
+    시각화할 스냅샷 인덱스 선택.
+    - n_snapshots가 min_panels 이하면 전부 사용
+    - 그보다 크면 0..n-1을 균등 간격으로 min_panels개 선택(시작·끝 포함)
+    """
+    if n_snapshots <= 0:
+        return []
+    if n_snapshots <= min_panels:
+        return list(range(n_snapshots))
+    return sorted(
+        set(
+            int(round(i * (n_snapshots - 1) / (min_panels - 1)))
+            for i in range(min_panels)
+        )
+    )
+
+
 def value_iter(V, env, gamma, threshold=0.001, is_render=True):
     """
     가치 반복 메인 루프.
     - 매 반복마다 V를 갱신하고, 최대 변화량(delta)로 수렴을 판단한다.
     """
     # 스냅샷을 모아서 한 창에 그리기 위한 리스트
-    # - value iteration은 반복 횟수가 많을 수 있으므로, 여기서는 "모든 반복"을 저장해두고
-    #   나중에 균등 간격으로 4개를 뽑아(mid) 시각화합니다.
+    # - 모든 스텝을 저장한 뒤, 시각화 시 최소 5패널이 되도록 균등 간격으로 고릅니다.
     #
     # snapshots_all = [(iter_idx, V_copy), ...]
     # - iter_idx=0은 시작(V=0)
@@ -133,24 +150,9 @@ def value_iter(V, env, gamma, threshold=0.001, is_render=True):
         if delta < threshold:
             break
 
-    # ====== start + 4 mid + final(총 6개) 선택 ======
-    # snapshots_all 길이가 n이면, 인덱스 0..n-1 중에서
-    # [0, 1/5, 2/5, 3/5, 4/5, 마지막] 지점을 반올림으로 선택합니다.
+    # 최소 5개 패널이 나오도록 균등 간격으로 선택(스냅샷 개수가 5 미만이면 전부)
     n = len(snapshots_all)
-    if n <= 1:
-        pick = [0]
-    else:
-        pick = [
-            0,
-            int(round((n - 1) * 1 / 5)),
-            int(round((n - 1) * 2 / 5)),
-            int(round((n - 1) * 3 / 5)),
-            int(round((n - 1) * 4 / 5)),
-            n - 1,
-        ]
-
-    # 중복 제거 + 정렬(반올림 때문에 같은 인덱스가 나올 수 있음)
-    pick = sorted(set(pick))
+    pick = _pick_snapshot_indices(n, min_panels=5)
 
     # 최종 반환용: [(name, V_snapshot), ...]
     snapshots = []
@@ -164,50 +166,99 @@ def value_iter(V, env, gamma, threshold=0.001, is_render=True):
             name = f"mid (iter {it})"
         snapshots.append((name, V_snap))
 
-    return V, snapshots
+    return V, snapshots, iter_idx
 
 
 if __name__ == "__main__":
-    env = GridWorld5x5()
-    gamma = 0.9  # 할인율
-    V = defaultdict(lambda: 0.0)
+    # ============================================================
+    # 하이퍼파라미터 비교 실행 (결과를 위·중·아래 세 줄로 표시)
+    #
+    # ┌────────────────────────┬────────┬─────────────┐
+    # │                        │ gamma  │  threshold  │
+    # ├────────────────────────┼────────┼─────────────┤
+    # │ [Default]              │  0.9   │   0.001     │ ← 기본값
+    # │ [gamma only]  (*)      │  0.99  │   0.001     │ ← gamma만 변경
+    # │ [gamma+threshold] (**) │  0.99  │   1e-6      │ ← 둘 다 변경
+    # └────────────────────────┴────────┴─────────────┘
+    #
+    # 1행 vs 2행 : gamma 변경 효과만 격리해서 확인
+    # 2행 vs 3행 : threshold 변경 효과만 격리해서 확인
+    #              (V 크기는 비슷, 수렴 정밀도·반복 횟수가 달라짐)
+    #
+    # gamma     : 할인율. 높을수록 먼 미래 보상을 더 중시 → V 크기 변화.
+    # threshold : 수렴 임계값. 낮을수록 더 정밀하게 수렴 (반복 횟수↑, 속도↓).
+    # ============================================================
+    CONFIGS = [
+        dict(
+            label="[Default]            gamma=0.9,  threshold=0.001",
+            gamma=0.9,           # 기본값
+            threshold=0.001,     # 기본값
+        ),
+        dict(
+            label="[gamma only] (*)     gamma=0.99, threshold=0.001",
+            gamma=0.99,          # (*) 변경: 0.9 → 0.99  (먼 미래 보상 더 반영 → V 크기↑)
+            threshold=0.001,     # 기본값 유지
+        ),
+        dict(
+            label="[gamma+threshold](**) gamma=0.99, threshold=1e-6",
+            gamma=0.99,          # (*) 동일
+            threshold=1e-6,      # (**) 변경: 0.001 → 1e-6 (더 정밀한 수렴, 반복↑)
+        ),
+    ]
 
-    # 1) 최적 가치 함수 V* 찾기
-    V, snapshots = value_iter(V, env, gamma, is_render=True)
-
-    # 2) V*에 대한 최적 정책 pi* 찾기
-    pi = greedy_policy(V, env, gamma)
-
-    # ==========================
-    # 한 창(figure) 안에 여러 결과를 서브플롯으로 출력
-    # ==========================
-    # start + 4 mid + final (총 6개)
-    # 2줄로 보기 좋게: 2행 x 3열
-    n = len(snapshots)
-    nrows, ncols = 2, 3
-    fig, axes = plt.subplots(nrows, ncols, figsize=(4.2 * ncols, 4.6 * nrows))
-    axes = axes.flatten()
-
-    for i, (name, V_snap) in enumerate(snapshots):
-        ax = axes[i]
-        # final만 greedy 정책까지 같이 표시하고, 나머지는 V만 표시
-        policy = pi if i == n - 1 else None
-        title = "final (V*) + greedy π*" if i == n - 1 else name
-
-        env.render_v(
-            V_snap,
-            policy,
-            use_matplotlib=True,
-            ax=ax,
-            show=False,
-            title=title,
-            draw_colorbar=False,
+    all_rows = []
+    for cfg in CONFIGS:
+        env = GridWorld5x5()
+        V = defaultdict(lambda: 0.0)
+        V, snapshots, total_iters = value_iter(
+            V, env, cfg["gamma"], threshold=cfg["threshold"]
         )
+        pi = greedy_policy(V, env, cfg["gamma"])
+        print(f"\n{cfg['label']}")
+        print(f"  => 총 {total_iters}회 Bellman 백업 후 수렴")
+        all_rows.append((cfg, snapshots, pi, env))
 
-    # 사용하지 않는 subplot 축은 숨김(예: n<6인 경우)
-    for j in range(n, len(axes)):
-        axes[j].axis("off")
+    # ==========================
+    # 3행 x 5열 figure: 위=Default / 중=gamma만 변경 / 아래=둘 다 변경
+    # ==========================
+    N_ROWS = len(CONFIGS)
+    N_COLS = 5
+    fig, axes = plt.subplots(
+        N_ROWS,
+        N_COLS,
+        figsize=(4.6 * N_COLS, 5.4 * N_ROWS),
+        constrained_layout=True,
+    )
 
-    plt.tight_layout()
+    for row_i, (cfg, snapshots, pi, env) in enumerate(all_rows):
+        row_axes = axes[row_i]
+        n = len(snapshots)
+        for col_i in range(N_COLS):
+            ax = row_axes[col_i]
+            if col_i < n:
+                panel_name, V_snap = snapshots[col_i]
+                is_last = col_i == n - 1
+                policy = pi if is_last else None
+                panel_title = "final (V*)+π*" if is_last else panel_name
+                # 각 행의 첫 번째 패널 제목에 config 정보 표시
+                if col_i == 0:
+                    panel_title = f"{cfg['label']}\n{panel_title}"
+                env.render_v(
+                    V_snap,
+                    policy,
+                    use_matplotlib=True,
+                    ax=ax,
+                    show=False,
+                    title=panel_title,
+                    draw_colorbar=False,
+                )
+            else:
+                ax.axis("off")
+
+    plt.suptitle(
+        "Value Iteration — Hyperparameter Comparison",
+        fontsize=13,
+        fontweight="bold",
+    )
     plt.show()
 

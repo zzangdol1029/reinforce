@@ -134,6 +134,20 @@ def greedy_policy(V, env, gamma):
     return pi
 
 
+def _pick_snapshot_indices(n_snapshots, min_panels=5):
+    """시각화할 스냅샷 인덱스: 최소 min_panels개(가능할 때) 균등 간격."""
+    if n_snapshots <= 0:
+        return []
+    if n_snapshots <= min_panels:
+        return list(range(n_snapshots))
+    return sorted(
+        set(
+            int(round(i * (n_snapshots - 1) / (min_panels - 1)))
+            for i in range(min_panels)
+        )
+    )
+
+
 def policy_iter(env, gamma, threshold=0.001, is_render=True):
     """
     정책 반복:
@@ -183,44 +197,93 @@ def policy_iter(env, gamma, threshold=0.001, is_render=True):
 
 
 if __name__ == "__main__":
-    env = GridWorld5x5()
-    gamma = 0.9  # 할인율 (미래 보상에 대한 현재 가치 비중)
+    # ============================================================
+    # 하이퍼파라미터 비교 실행 (결과를 위·중·아래 세 줄로 표시)
+    #
+    # ┌────────────────────────┬────────┬─────────────┐
+    # │                        │ gamma  │  threshold  │
+    # ├────────────────────────┼────────┼─────────────┤
+    # │ [Default]              │  0.9   │   0.001     │ ← 기본값
+    # │ [gamma only]  (*)      │  0.99  │   0.001     │ ← gamma만 변경
+    # │ [gamma+threshold] (**) │  0.99  │   1e-6      │ ← 둘 다 변경
+    # └────────────────────────┴────────┴─────────────┘
+    #
+    # 1행 vs 2행 : gamma 변경 효과만 격리해서 확인
+    # 2행 vs 3행 : threshold 변경 효과만 격리해서 확인
+    #              (V 크기는 비슷, 수렴 정밀도·사이클 수가 달라짐)
+    #
+    # gamma     : 할인율. 높을수록 먼 미래 보상을 더 중시 → V 크기 변화.
+    # threshold : 수렴 임계값. 낮을수록 더 정밀하게 수렴 (평가 반복↑, 속도↓).
+    # ============================================================
+    CONFIGS = [
+        dict(
+            label="[Default]            gamma=0.9,  threshold=0.001",
+            gamma=0.9,           # 기본값
+            threshold=0.001,     # 기본값
+        ),
+        dict(
+            label="[gamma only] (*)     gamma=0.99, threshold=0.001",
+            gamma=0.99,          # (*) 변경: 0.9 → 0.99  (먼 미래 보상 더 반영 → V 크기↑)
+            threshold=0.001,     # 기본값 유지
+        ),
+        dict(
+            label="[gamma+threshold](**) gamma=0.99, threshold=1e-6",
+            gamma=0.99,          # (*) 동일
+            threshold=1e-6,      # (**) 변경: 0.001 → 1e-6 (더 정밀한 수렴, 반복↑)
+        ),
+    ]
 
-    pi, V, snapshots = policy_iter(env, gamma, is_render=True)
-
-    # ==========================
-    # 한 창(figure) 안에 여러 결과를 서브플롯으로 출력
-    # ==========================
-    # 너무 많으면 보기 어려우니 최대 6개까지만 표시:
-    # - 3개 이하면 전부
-    # - 4개 이상이면 앞 3개 + 마지막 3개
-    if len(snapshots) <= 6:
-        show_snaps = snapshots
-    else:
-        show_snaps = snapshots[:3] + snapshots[-3:]
-
-    n = len(show_snaps)
-    # 2줄 배치: 최대 6개 기준으로 2행 x 3열이 가장 보기 좋음
-    nrows, ncols = 2, 3
-    fig, axes = plt.subplots(nrows, ncols, figsize=(4.2 * ncols, 4.6 * nrows))
-    axes = axes.flatten()
-
-    for i, (name, V_snap, pi_snap) in enumerate(show_snaps):
-        ax = axes[i]
-        env.render_v(
-            V_snap,
-            pi_snap,
-            use_matplotlib=True,
-            ax=ax,
-            show=False,
-            title=name,
-            draw_colorbar=False,
+    all_rows = []
+    for cfg in CONFIGS:
+        env = GridWorld5x5()
+        pi, V, snapshots = policy_iter(
+            env, cfg["gamma"], threshold=cfg["threshold"]
         )
+        pick = _pick_snapshot_indices(len(snapshots), min_panels=5)
+        show_snaps = [snapshots[i] for i in pick]
+        print(f"\n{cfg['label']}")
+        print(f"  => 총 {len(snapshots)}개 평가·개선 사이클")
+        all_rows.append((cfg, show_snaps, env))
 
-    # 남는 subplot 축 숨김
-    for j in range(n, len(axes)):
-        axes[j].axis("off")
+    # ==========================
+    # 3행 x 5열 figure: 위=Default / 중=gamma만 변경 / 아래=둘 다 변경
+    # ==========================
+    N_ROWS = len(CONFIGS)
+    N_COLS = 5
+    fig, axes = plt.subplots(
+        N_ROWS,
+        N_COLS,
+        figsize=(4.6 * N_COLS, 5.4 * N_ROWS),
+        constrained_layout=True,
+    )
 
-    plt.tight_layout()
+    for row_i, (cfg, show_snaps, env) in enumerate(all_rows):
+        row_axes = axes[row_i]
+        n = len(show_snaps)
+        for col_i in range(N_COLS):
+            ax = row_axes[col_i]
+            if col_i < n:
+                name, V_snap, pi_snap = show_snaps[col_i]
+                panel_title = name
+                # 각 행의 첫 번째 패널 제목에 config 정보 표시
+                if col_i == 0:
+                    panel_title = f"{cfg['label']}\n{panel_title}"
+                env.render_v(
+                    V_snap,
+                    pi_snap,
+                    use_matplotlib=True,
+                    ax=ax,
+                    show=False,
+                    title=panel_title,
+                    draw_colorbar=False,
+                )
+            else:
+                ax.axis("off")
+
+    plt.suptitle(
+        "Policy Iteration — Hyperparameter Comparison",
+        fontsize=13,
+        fontweight="bold",
+    )
     plt.show()
 

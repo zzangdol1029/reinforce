@@ -164,8 +164,59 @@ class GridWorld5x5:
 
 
 if __name__ == "__main__":
+    from collections import defaultdict
+
+    import matplotlib.pyplot as plt
+
+    from value_iter5x5 import greedy_policy, value_iter_onestep
+
     env = GridWorld5x5()
+    gamma = 0.9
     print("start:", env.reset())
     s, r, d = env.step(3)
     print("RIGHT:", s, r, d)
     print("shape:", env.shape, "goal", env.goal_state, "walls", env.wall_states)
+
+    # Value Iteration: Bellman optimal backup 5 steps — one window
+    print("\n--- Value Iteration demo (5 steps) ---")
+    V = defaultdict(float)
+    for state in env.states():
+        V[state] = 0.0
+
+    snapshots = []
+    for k in range(1, 6):
+        V = value_iter_onestep(V, env, gamma)
+        pi_k = greedy_policy(V, env, gamma)
+        snapshots.append((f"Value Iter step {k}", V.copy(), pi_k))
+    print("Demo: 5 steps shown. Run value_iter5x5.py for full convergence.")
+
+    n = len(snapshots)
+    ncols = 5
+    nrows = int(np.ceil(n / ncols))
+    fig, axes = plt.subplots(
+        nrows,
+        ncols,
+        figsize=(4.6 * ncols, 5.0 * nrows),
+        constrained_layout=True,
+    )
+    if nrows * ncols == 1:
+        axes = [axes]
+    else:
+        axes = axes.flatten()
+
+    for i, (name, V_snap, pi_snap) in enumerate(snapshots):
+        ax = axes[i]
+        env.render_v(
+            V_snap,
+            pi_snap,
+            use_matplotlib=True,
+            ax=ax,
+            show=False,
+            title=name,
+            draw_colorbar=False,
+        )
+
+    for j in range(n, len(axes)):
+        axes[j].axis("off")
+
+    plt.show()

@@ -32,11 +32,65 @@ try:
     import matplotlib.pyplot as plt
     from matplotlib.colors import TwoSlopeNorm
     from matplotlib.patches import FancyArrowPatch, Rectangle
+    from matplotlib import font_manager
 
     _HAS_MPL = True
 except ImportError:
     _HAS_MPL = False
     Rectangle = None
+    font_manager = None
+
+# matplotlib 기본 폰트는 한글 미지원인 경우가 많아, 한 번만 한글 가능 폰트로 맞춤
+_MPL_FONT_CONFIGURED = False
+
+
+def _configure_matplotlib_korean_font():
+    """Windows/macOS 등에서 한글 제목·라벨이 □로 깨지지 않도록 폰트 설정."""
+    global _MPL_FONT_CONFIGURED
+    if _MPL_FONT_CONFIGURED or not _HAS_MPL:
+        return
+    _MPL_FONT_CONFIGURED = True
+    import matplotlib.pyplot as plt
+
+    # 1순위: 파일 경로로 직접 찾기 (가장 확실, Windows 맑은 고딕 우선)
+    import os, sys
+
+    _FONT_FILE_CANDIDATES = [
+        # Windows
+        r"C:\Windows\Fonts\malgun.ttf",       # 맑은 고딕
+        r"C:\Windows\Fonts\malgunbd.ttf",
+        r"C:\Windows\Fonts\gulim.ttc",         # 굴림
+        r"C:\Windows\Fonts\batang.ttc",        # 바탕
+        # macOS
+        "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+        "/Library/Fonts/NanumGothic.ttf",
+        # Linux
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    ]
+    for fpath in _FONT_FILE_CANDIDATES:
+        if os.path.exists(fpath):
+            prop = font_manager.FontProperties(fname=fpath)
+            plt.rcParams["font.family"] = prop.get_name()
+            font_manager.fontManager.addfont(fpath)
+            plt.rcParams["axes.unicode_minus"] = False
+            return
+
+    # 2순위: 이름으로 찾기 (font cache 기반)
+    names = {f.name for f in font_manager.fontManager.ttflist}
+    for candidate in (
+        "Malgun Gothic",
+        "NanumGothic",
+        "Nanum Gothic",
+        "Gulim",
+        "AppleGothic",
+        "Apple SD Gothic Neo",
+        "Noto Sans CJK KR",
+    ):
+        if candidate in names:
+            plt.rcParams["font.family"] = candidate
+            break
+    plt.rcParams["axes.unicode_minus"] = False
 
 
 class Renderer:
@@ -158,6 +212,10 @@ class Renderer:
         - RdYlGn: 음수(빨강) → 0(노랑) → 양수(초록)
         - policy가 있으면 화살표를 그림(확률에 비례해 길이 스케일)
         """
+        _configure_matplotlib_korean_font()
+        # 여러 서브플롯에 넣을 때(ax 지정): 오른쪽 R 라벨이 옆 패널과 겹치지 않도록 칸 안에 표시
+        reward_labels_outside = ax is None
+
         values = np.zeros((self.height, self.width))
         wall_mask = np.zeros((self.height, self.width), dtype=bool)
 
@@ -258,20 +316,49 @@ class Renderer:
         ax.set_yticks(np.arange(self.height))
         ax.set_xticklabels([])
         ax.set_yticklabels([])
-        ax.set_xlim(-0.5, self.width - 0.5 + 1.5)
+        if reward_labels_outside:
+            ax.set_xlim(-0.5, self.width - 0.5 + 1.5)
+        else:
+            ax.set_xlim(-0.5, self.width - 0.5)
         ax.set_ylim(self.height - 0.5, -0.5)
 
-        # reward_map에 있는 비영(非0) 보상은 오른쪽에 라벨로 표시
+        # reward_map에 있는 비영(非0) 보상 라벨
+        # - 단독 figure: 격자 오른쪽에 R … (교재 스타일)
+        # - 서브플롯 다열: 오른쪽 여백 없이 칸 안(우상단)에만 표시해 옆 패널과 겹침 방지
         for h in range(self.height):
             for w in range(self.width):
                 r = self.reward_map[h, w]
                 if r is None or r == 0:
                     continue
-                x_text = self.width + 0.05
-                if (h, w) == self.goal_state and r > 0:
-                    ax.text(x_text, h, f"R {r} (GOAL)", va="center", fontsize=9)
-                elif r < 0:
-                    ax.text(x_text, h, f"R {r}", va="center", fontsize=9)
+                if reward_labels_outside:
+                    x_text = self.width + 0.05
+                    if (h, w) == self.goal_state and r > 0:
+                        ax.text(x_text, h, f"R {r} (GOAL)", va="center", fontsize=9)
+                    elif r < 0:
+                        ax.text(x_text, h, f"R {r}", va="center", fontsize=9)
+                else:
+                    if (h, w) == self.goal_state and r > 0:
+                        ax.text(
+                            w + 0.42,
+                            h - 0.42,
+                            f"R{r:g} G",
+                            ha="right",
+                            va="top",
+                            fontsize=7,
+                            color="darkgreen",
+                            zorder=12,
+                        )
+                    elif r < 0:
+                        ax.text(
+                            w + 0.42,
+                            h - 0.42,
+                            f"R{r:g}",
+                            ha="right",
+                            va="top",
+                            fontsize=7,
+                            color="darkred",
+                            zorder=12,
+                        )
 
         if draw_colorbar:
             fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="V(s)")
