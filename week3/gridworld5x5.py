@@ -1,7 +1,7 @@
 """
 Quiz (p.42) — 5x5 Grid World
   - Goal(사과): (0, 4), 보상 +1
-  - 함정(폭탄): (0, 3), (3, 3), 보상 -1
+  - 함정(폭탄): (0, 3), (3, 4), 보상 -1  — (하단좌표 기준 문제문) 목표 왼쪽 (3,4), 우측 (4,1) → (h,w)=(0,3),(3,4)
   - 벽: (2, 1), (2, 2)
   - 시작: (4, 0)
 정책/가치 반복 등과 연동할 수 있도록 week3/gridworld.py 와 동일한 API.
@@ -36,7 +36,7 @@ class GridWorld5x5:
 
         # 함정(폭탄): 도착 보상 -1
         self.reward_map[0, 3] = -1.0
-        self.reward_map[3, 3] = -1.0
+        self.reward_map[3, 4] = -1.0
 
         # 목표(사과): 도착 보상 +1
         self.reward_map[0, 4] = 1.0
@@ -48,7 +48,7 @@ class GridWorld5x5:
         # ====== 주요 상태들 ======
         self.goal_state = (0, 4)
         self.wall_states = frozenset(((2, 1), (2, 2)))
-        self.trap_states = frozenset(((0, 3), (3, 3)))
+        self.trap_states = frozenset(((0, 3), (3, 4)))
         self.start_state = (4, 0)
 
         # 에이전트의 현재 상태 (step/reset에서 사용)
