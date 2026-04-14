@@ -31,7 +31,7 @@
 ## 본 실험에서 확인할 것
 
 - 같은 `seed`로 돌리면 **재현**됩니다. 설정을 바꿔 `metrics.csv`와 `summary_metrics.png`를 비교해 보세요.  
-- `combined_all_q_policy.png`에서 **모든 설정을 한 화면**에 세로로 비교합니다.  
+- `combined_all_q_policy.png`에서 **모든 설정을 한 화면**에 가로로 열을 배치하고, 각 열에서 위=Q·아래=policy로 비교합니다.
 - 파라미터에 대한 상세 **고찰**은 `PARAMETER_REFLECTION.md`를 참고하세요.
 
 ---
