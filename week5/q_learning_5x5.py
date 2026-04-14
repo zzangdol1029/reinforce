@@ -3,7 +3,7 @@
 
 환경: week3/gridworld5x5.py
 결과 폴더: week5/results_q_learning_5x5/
-- `combined_all_q_policy.png`: 모든 설정의 Q·policy를 **한 화면**(세로로 비교)
+- `combined_all_q_policy.png`: 모든 설정의 Q·policy를 **한 화면**(가로 열 배치, 각 열 위=Q·아래=policy)
 - `summary_metrics.png`: 지표 **막대 그래프만** 별도
 - `metrics.csv`, `README_ANALYSIS.md`, `PARAMETER_REFLECTION.md` (파라미터 고찰)
 실행: 기본은 창 2개(위 순서). 창 없이 저장만: `python q_learning_5x5.py --no-show`
@@ -165,23 +165,24 @@ def save_combined_q_policy_figure(
     *,
     show: bool,
 ) -> None:
-    """모든 설정을 행 단위로 한 figure에 배치 (왼쪽 Q, 오른쪽 greedy policy)."""
+    """모든 설정을 가로(열)로 배치한다. 각 열에서 위=Q, 아래=greedy policy."""
     _gw4._module._configure_matplotlib_korean_font()
     n = len(configs)
-    row_h = 2.85
-    fig, axes = plt.subplots(n, 2, figsize=(14, max(6.0, row_h * n)))
+    col_w = 2.85
+    fig_h = 7.0
+    fig, axes = plt.subplots(2, n, figsize=(max(10.0, col_w * n), fig_h))
     axes = np.asarray(axes)
-    if axes.ndim == 1:
-        axes = axes[np.newaxis, :]
+    if n == 1:
+        axes = axes.reshape(2, 1)
 
-    for i, (agent, cfg) in enumerate(zip(agents, configs)):
-        renderer._draw_q_diamond(agent.Q, axes[i, 0])
-        renderer._draw_greedy_policy(agent.Q, axes[i, 1])
-        axes[i, 0].set_title(
+    for j, (agent, cfg) in enumerate(zip(agents, configs)):
+        renderer._draw_q_diamond(agent.Q, axes[0, j])
+        renderer._draw_greedy_policy(agent.Q, axes[1, j])
+        axes[0, j].set_title(
             f"[{cfg.name}] Q  |  γ={cfg.gamma}  α={cfg.alpha}  ε={cfg.epsilon}",
             fontsize=10,
         )
-        axes[i, 1].set_title(f"[{cfg.name}] greedy policy", fontsize=10)
+        axes[1, j].set_title(f"[{cfg.name}] greedy policy", fontsize=10)
 
     fig.suptitle(
         "하이퍼파라미터별 Q-Learning 결과 비교 (동일 seed, 동일 에피소드 수)",
@@ -279,7 +280,7 @@ def write_analysis_md(path: Path, configs: list[RunConfig], stats_list: list[dic
 ## 본 실험에서 확인할 것
 
 - 같은 `seed`로 돌리면 **재현**됩니다. 설정을 바꿔 `metrics.csv`와 `summary_metrics.png`를 비교해 보세요.  
-- `combined_all_q_policy.png`에서 **모든 설정을 한 화면**에 세로로 비교합니다.  
+- `combined_all_q_policy.png`에서 **모든 설정을 한 화면**에 가로로 열을 배치하고, 각 열에서 위=Q·아래=policy로 비교합니다.
 - 파라미터에 대한 상세 **고찰**은 `PARAMETER_REFLECTION.md`를 참고하세요.
 
 ---
