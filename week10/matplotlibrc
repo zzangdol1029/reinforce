@@ -1,0 +1,9 @@
+# week10 실습용 matplotlib 설정
+# - 이 파일이 있는 디렉토리에서 python을 실행하면 자동 적용됩니다.
+# - macOS GUI 창으로 그래프를 띄우기 위해 백엔드를 MacOSX 로 고정합니다.
+# - 리눅스/원격 환경에서는 TkAgg 로 바꾸거나 이 파일을 삭제하세요.
+backend: MacOSX
+
+# 인터랙티브 모드 OFF — plt.show() 가 blocking 으로 동작
+# (창을 닫아야 다음 plt.show() 가 실행되어 다음 그래프가 뜸)
+interactive: False
