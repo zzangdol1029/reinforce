@@ -1,0 +1,7 @@
+# week11 — week10-dezero conda 환경 안에서 설치 (base 에 dezero 설치 금지)
+#   conda activate week10-dezero
+#   pip install -r requirements.txt
+dezero>=0.0.13
+numpy>=1.26,<2
+matplotlib>=3.8
+gymnasium[classic-control]>=0.29

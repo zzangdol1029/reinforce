@@ -1,0 +1,16 @@
+# week11 DQN 실습 — DeZero + NumPy 1.x (week10 과 동일 스택)
+# 이미 week10-dezero 가 있으면 새로 만들 필요 없음:
+#   conda activate week10-dezero
+#   pip install "gymnasium[classic-control]"
+#
+name: week10-dezero
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - "numpy>=1.26,<2"
+  - matplotlib>=3.8
+  - pip
+  - pip:
+      - dezero>=0.0.13
+      - gymnasium[classic-control]>=0.29
