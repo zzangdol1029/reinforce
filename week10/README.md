@@ -13,17 +13,104 @@ week10/
 │
 ├─ quiz_q1_optimizer_compare.py   # PDF p.16 Quiz Q1 — MomentumSGD / AdaGrad / Adam 비교 (+SGD)
 ├─ quiz_q2_sin_4pi.py             # PDF p.16 Quiz Q2 — y = sin(4πx) 회귀
+├─ quiz_q3_gridworld.py           # Quiz Q3 — 5×5 Grid World + Q-Network (week3 환경, DeZero 또는 NumPy 폴백)
 │
 ├─ common/
 │   └─ gridworld.py      # 책 저장소 호환 GridWorld 환경
 ├─ matplotlibrc          # 백엔드 = MacOSX (이 폴더에서 실행 시 자동 적용)
-├─ requirements.txt      # numpy / matplotlib / dezero
-└─ setup_dezero.sh       # 가상환경 + 의존성 + 호환 패치 자동화
+├─ environment.yml          # Conda 환경 정의 (week10-dezero)
+├─ setup_dezero_conda.ps1   # Windows: 환경 생성/갱신 (1회)
+├─ setup_dezero_conda.sh    # macOS/Linux: 동일
+├─ run_week10.ps1 / .sh    # 활성화 후 실습·퀴즈 일괄 실행
+├─ requirements.txt
+├─ patch_dezero_numpy2.py    # NumPy 2 일 때만 (보통 불필요, environment.yml 은 NumPy 1.x)
+└─ setup_dezero.sh           # venv 대안 (Linux/mac)
 ```
 
 ---
 
-## 1. 빠른 설치 (권장)
+## 0. Conda 환경 — 설치 후 실행 (권장)
+
+**환경 이름:** `week10-dezero` (Python 3.11, NumPy 1.x, dezero, matplotlib)
+
+### 1) 환경 만들기 (최초 1회)
+
+**Windows**
+
+```powershell
+cd week10
+.\setup_dezero_conda.ps1
+```
+
+**macOS / Linux**
+
+```bash
+cd week10
+bash setup_dezero_conda.sh
+```
+
+스크립트 없이 직접 해도 됩니다:
+
+```bash
+conda env create -f environment.yml      # 이미 있으면 아래 update
+conda env update -f environment.yml --prune
+```
+
+### 2) 활성화 후 Python 실행
+
+```bash
+conda activate week10-dezero
+cd week10
+
+python dezero3.py
+python dezero4.py
+python q_learning_nn.py
+python quiz_q1_optimizer_compare.py
+python quiz_q2_sin_4pi.py
+python quiz_q3_gridworld.py
+```
+
+한 번에 실행 (활성화된 상태에서):
+
+```powershell
+.\run_week10.ps1          # Windows
+bash run_week10.sh        # macOS/Linux
+.\run_week10.ps1 -Only q1 # 퀴즈 하나만
+```
+
+**중요:** 프롬프트가 `(base)` 이면 **base** 의 dezero 가 쓰여 `np.int` 오류가 납니다. 반드시 `(week10-dezero)` 인지 확인하세요.
+
+```powershell
+python -c "import dezero; print(dezero.__file__)"
+# → ...\envs\week10-dezero\... 이어야 함
+```
+
+**Cursor / VS Code:** `Ctrl+Shift+P` → **Python: Select Interpreter** → `week10-dezero`
+
+---
+
+## 0b. Windows venv 대안 (`ModuleNotFoundError` 등)
+
+`ModuleNotFoundError: dezero` 이거나 **`NumPy 2`에서 `np.int` 오류**로 `import dezero` 가 깨지는 경우가 많습니다.  
+conda 대신 로컬 venv 를 쓰려면:
+
+```powershell
+cd week10
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned   # 필요 시 한 번만
+.\setup_dezero_windows.ps1
+.\.venv-week10\Scripts\Activate.ps1
+python quiz_q1_optimizer_compare.py
+```
+
+이미 다른 venv 에 `pip install dezero matplotlib` 까지만 했다면, **같은 Python** 으로:
+
+```powershell
+python patch_dezero_numpy2.py
+```
+
+---
+
+## 1. 빠른 설치 (리눅스·맥 · venv, bash)
 
 `setup_dezero.sh` 한 줄이면 됩니다.
 
@@ -52,9 +139,7 @@ python q_learning_nn.py  # 실습 #3
 
 python quiz_q1_optimizer_compare.py   # PDF p.16 Q1 — 옵티마이저 비교
 python quiz_q2_sin_4pi.py           # PDF p.16 Q2 — sin(4πx)
-
-python quiz_q1_optimizer_compare.py   # PDF p.16 Q1 — 옵티마이저 비교
-python quiz_q2_sin_4pi.py           # PDF p.16 Q2 — sin(4πx)
+python quiz_q3_gridworld.py         # Q3 — 5×5 Q-Network (옵션: --episodes 8000 --no-show)
 ```
 
 ---

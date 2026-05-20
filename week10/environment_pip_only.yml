@@ -1,0 +1,16 @@
+# 최소 설치용: conda 는 Python+pip 만, 나머지는 pip wheel (Qt/MKL 등 대량 패키지 제외)
+# 디스크/메모리가 부족할 때 우선 시도하세요.
+#
+#   .\setup_dezero_conda.ps1 -PipOnly
+#   CONDA_PY_ONLY=1 bash setup_dezero_conda.sh   (YAML 직접 지정 필요 시 아래 이름으로 교체)
+
+name: week10-dezero
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - numpy>=1.26
+      - matplotlib>=3.8
+      - dezero>=0.0.13

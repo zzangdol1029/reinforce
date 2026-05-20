@@ -1,3 +1,14 @@
-numpy>=1.23,<2.0
+# DeZero 실습 (week10) — 의존성
+#
+# ⚠️ Anaconda 등 **시스템 전역 Python** 에서는 수정 권한·NumPy 2 호환 때문에
+#    다음을 권장합니다:
+#      PowerShell:  .\setup_dezero_windows.ps1   (week10 에 .venv-week10 생성)
+#      또는 Linux/macOS: bash setup_dezero.sh
+#
+# 수동 설치 시 (가상환경 안에서):
+#   pip install -r requirements.txt
+#   python patch_dezero_numpy2.py      # NumPy 2 에서 np.int 오류 나면 필수
+
 matplotlib>=3.5
 dezero>=0.0.13
+numpy>=1.26,<2

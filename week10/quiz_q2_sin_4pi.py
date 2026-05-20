@@ -12,6 +12,16 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from typing import Sequence
+import sys
+
+import matplotlib
+
+if "--no-plot" in sys.argv:
+    matplotlib.use("Agg", force=True)
+elif sys.platform == "darwin":
+    matplotlib.use("MacOSX", force=True)
+else:
+    matplotlib.use("TkAgg", force=True)
 
 import numpy as np
 import matplotlib.pyplot as plt

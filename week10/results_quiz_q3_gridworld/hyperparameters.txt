@@ -1,0 +1,14 @@
+Quiz Q3 — Hyperparameters & eval
+
+backend: dezero
+
+gamma: 0.9
+lr: 0.01
+epsilon: 0.15
+hidden: 100
+episodes: 6000
+optimizer: adam
+seed: 42
+
+greedy_eval_goal_rate: 0.0000
+greedy_eval_trap_rate: 0.0000

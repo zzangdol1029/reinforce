@@ -1,0 +1,16 @@
+# week10 실습용 Conda 환경 (한 개만 사용)
+#
+#   conda env create -f environment.yml    # 최초 1회
+#   conda env update -f environment.yml --prune   # 패키지 갱신 시
+#   conda activate week10-dezero
+#
+name: week10-dezero
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - "numpy>=1.26,<2"    # DeZero 0.0.13 은 NumPy 2 와 비호환 → 1.x 고정
+  - matplotlib>=3.8
+  - pip
+  - pip:
+      - dezero>=0.0.13

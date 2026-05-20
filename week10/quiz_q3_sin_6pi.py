@@ -13,7 +13,18 @@ sin(6πx) 는 sin(4πx) 보다 주기가 짧아(구간 [0,1] 안에 3주기)
 from __future__ import annotations
 
 import argparse
+import sys
 from dataclasses import dataclass
+
+import matplotlib
+
+# week10/matplotlibrc 는 MacOSX 고정 → Windows 에서 plt.subplots() 실패 방지
+if "--no-plot" in sys.argv:
+    matplotlib.use("Agg", force=True)
+elif sys.platform == "darwin":
+    matplotlib.use("MacOSX", force=True)
+else:
+    matplotlib.use("TkAgg", force=True)
 
 import numpy as np
 import matplotlib.pyplot as plt

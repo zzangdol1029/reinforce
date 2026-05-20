@@ -1,0 +1,13 @@
+# 동일 환경명 week10-dezero — conda-forge 우선 (repodata 다운로드에 메모리 많이 씀)
+# 메모리 여유가 있을 때만 권장.
+name: week10-dezero
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy>=1.26
+  - matplotlib>=3.8
+  - pip
+  - pip:
+      - dezero>=0.0.13
