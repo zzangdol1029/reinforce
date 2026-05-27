@@ -1,0 +1,7 @@
+# week12 — Policy Gradient Method (PDF 실습 + Quiz)
+#   pip install -r requirements.txt
+#   python patch_dezero_numpy2.py   # NumPy 2.x 에서 dezero np.int 오류 시 (week10 참고)
+dezero>=0.0.13
+numpy>=1.26,<2
+matplotlib>=3.8
+gymnasium[classic-control]>=0.29
