@@ -49,10 +49,27 @@ python Replay_buffer.py
 # 실습 #2 (학습 + 그래프 + CartPole 시연 창)
 python dqn2.py
 
-# 퀴즈 Q1 (기본 하이퍼파라미터 = 슬라이드 p.21)
+# 퀴즈 Q1 (권장 기본값 = epsilon decay + warmup 내장, 약 10분)
 python quiz_q1_mountain_car_dqn.py
-python quiz_q1_mountain_car_dqn.py --epsilon 0.2 --episodes 500
 python quiz_q1_mountain_car_dqn.py --play
 ```
+
+### 퀴즈 Q1 권장 Hyper-parameter (검증: train max **-116**, shaping+seed)
+
+| 변수 | 값 | 비고 |
+|------|-----|------|
+| `seed` | 0 | 재현성 |
+| `gamma` | 0.99 | |
+| `lr` | 0.0005 | |
+| `eps_start` → `eps_end` | 1.0 → 0.02 | `eps_decay_ratio=0.95` |
+| `warmup_steps` | 15000 | |
+| `updates_per_step` | 4 | |
+| `reward shaping` | on (`scale=10`) | Mountain Car 수렴 가속 |
+| `episodes` | 1500 | 800은 편차 큼 |
+| `batch_size` | 64 | |
+
+**점수 해석:** `-200`=실패, `-153`=깃발 도달(느림), `-110~-130`=양호. 로그에 `-200`만 많아 보여도 `최대 total reward`/`SUCCESS`를 확인.
+
+교재 슬라이드 기본값: `--no-epsilon-decay --no-warmup --no-reward-shaping --episodes 300`
 
 퀴즈 결과: `results_quiz_q1_mountain_car/episode_total_reward.png`, `hyperparameters.txt`

@@ -1,0 +1,50 @@
+Quiz Q1 — Mountain Car DQN (최적 Hyper-parameter)
+# -200=실패, -110~-130=성공(빠른 깃발 도달)
+
+seed: 0
+gamma: 0.99
+lr: 0.0005
+buffer_size: 100000
+batch_size: 64
+episodes: 1500
+sync_interval: 100
+hidden1: 256
+hidden2: 256
+eps_start: 1.0
+eps_end: 0.02
+eps_decay_ratio: 0.95
+warmup_steps: 15000
+updates_per_step: 4
+use_reward_shaping: True
+shaping_scale: 10.0
+
+--- 실제 실행 (CLI) ---
+gamma: 0.99
+lr: 0.0005
+epsilon: 0.02
+eps_start: 1.0
+eps_end: 0.02
+eps_decay_ratio: 0.95
+no_epsilon_decay: False
+warmup_steps: 15000
+no_warmup: False
+updates_per_step: 4
+buffer_size: 100000
+batch_size: 64
+episodes: 600
+sync_interval: 100
+hidden1: 256
+hidden2: 256
+log_interval: 50
+seed: 0
+no_reward_shaping: False
+shaping_scale: 10.0
+eval_episodes: 20
+play: False
+no_plot: True
+
+max_total_reward: -116.0
+max_reward_episode: 512
+train_success_count: 68
+greedy_eval_mean: -200.0
+greedy_eval_success_pct: 0.0
