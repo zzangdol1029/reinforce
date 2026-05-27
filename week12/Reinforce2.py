@@ -7,7 +7,6 @@ G_t = R_t + γ R_{t+1} + ... + γ^{T-t} R_T
 
 실행:
   python Reinforce2.py
-  python Reinforce2.py --plot
 """
 from __future__ import annotations
 
@@ -106,7 +105,6 @@ def main() -> None:
     ap.add_argument("--episodes", type=int, default=3000)
     ap.add_argument("--gamma", type=float, default=0.98)
     ap.add_argument("--lr", type=float, default=0.0002)
-    ap.add_argument("--plot", action="store_true")
     args = ap.parse_args()
 
     env = gym.make("CartPole-v0")
@@ -131,22 +129,21 @@ def main() -> None:
         if episode % 100 == 0:
             print(f"episode :{episode}, total reward : {total_reward}")
 
-    if args.plot:
-        fig, axes = plt.subplots(1, 2, figsize=(11, 4))
-        axes[0].plot(reward_history)
-        axes[0].set_xlabel("episode")
-        axes[0].set_ylabel("total reward")
-        axes[0].set_title("REINFORCE — Episode – total reward")
-        axes[0].grid(True, alpha=0.3)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+    axes[0].plot(reward_history)
+    axes[0].set_xlabel("episode")
+    axes[0].set_ylabel("total reward")
+    axes[0].set_title("REINFORCE — Episode – total reward")
+    axes[0].grid(True, alpha=0.3)
 
-        axes[1].plot(moving_average(reward_history, 100))
-        axes[1].set_xlabel("episode")
-        axes[1].set_ylabel("total reward")
-        axes[1].set_title("(100 회 평균)")
-        axes[1].grid(True, alpha=0.3)
+    axes[1].plot(moving_average(reward_history, 100))
+    axes[1].set_xlabel("episode")
+    axes[1].set_ylabel("total reward")
+    axes[1].set_title("(100 회 평균)")
+    axes[1].grid(True, alpha=0.3)
 
-        fig.tight_layout()
-        plt.show()
+    fig.tight_layout()
+    plt.show()
 
     env.close()
 

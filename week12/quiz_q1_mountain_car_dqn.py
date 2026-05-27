@@ -180,8 +180,9 @@ def save_reward_plot(reward_history: list[float], path: Path) -> None:
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(path, dpi=150)
-    plt.close()
     print(f"저장: {path}")
+    plt.show()
+    plt.close()
 
 
 def main() -> None:
@@ -196,7 +197,6 @@ def main() -> None:
     ap.add_argument("--hidden1", type=int, default=128)
     ap.add_argument("--hidden2", type=int, default=128)
     ap.add_argument("--play", action="store_true", help="학습 후 greedy 시연 (render)")
-    ap.add_argument("--no-plot", action="store_true")
     args = ap.parse_args()
 
     env = gym.make("MountainCar-v0", render_mode="rgb_array")
@@ -220,8 +220,7 @@ def main() -> None:
     print(f"\n최대 total reward: {best} (episode {best_ep})")
 
     plot_path = OUT_DIR / "episode_total_reward.png"
-    if not args.no_plot:
-        save_reward_plot(reward_history, plot_path)
+    save_reward_plot(reward_history, plot_path)
 
     hp_path = OUT_DIR / "hyperparameters.txt"
     OUT_DIR.mkdir(parents=True, exist_ok=True)
