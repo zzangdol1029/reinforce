@@ -1,0 +1,11 @@
+Quiz Q1 — Mountain Car Actor-Critic
+
+gamma: 0.98
+lr_pi: 0.0002
+lr_v: 0.0005
+hidden: 128
+episodes: 300
+play: False
+
+max_total_reward: -200.0
+max_reward_episode: 0

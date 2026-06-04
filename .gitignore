@@ -16,3 +16,7 @@ env/
 *_result.png
 *_reward.png
 *_curve.png
+
+# 학습된 RL 모델 파일 (용량 큼, 재학습으로 재현 가능)
+*.zip
+models/

@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # week10 Conda 환경 설치 (최초 1회 또는 갱신)
 #
+# 사용법:
 #   cd week10 && bash setup_dezero_conda.sh
 #   conda activate week10-dezero
 #   python dezero3.py
 #   ...
+#
+# 참고: conda가 없으면 스크립트가 종료됩니다.
 
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

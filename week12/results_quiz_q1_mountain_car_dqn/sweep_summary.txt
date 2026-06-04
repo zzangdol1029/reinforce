@@ -1,0 +1,10 @@
+Mountain Car DQN
+총 HP 실험 수: 20
+episodes: 1500
+seed: 0
+순위 기준: max_total_reward (높을수록 좋음)
+
+BEST_NAME: run04_g0.99_lr0.0005_ee0.02_b32_s10_h256_sh10
+BEST_max_total_reward: -83.0000
+
+전체 순위는 sweep_results.csv / sweep_statistics_table.png 참고
