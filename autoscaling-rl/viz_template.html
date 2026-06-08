@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>RL Worker Thread 튜닝 시뮬레이션</title>
+<style>
+  :root { --navy:#1E2761; --orange:#C55A11; --ice:#CADCFC; --light:#F4F6FB; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Malgun Gothic','Segoe UI',sans-serif; background:#fff; color:#222; padding:18px 26px; }
+  h1 { font-size:20px; color:var(--navy); margin-bottom:4px; }
+  .sub { font-size:12px; color:#777; margin-bottom:14px; }
+  .controls { display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .controls button, .controls select { padding:6px 14px; border:1px solid var(--navy); background:#fff;
+    color:var(--navy); border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; }
+  .controls button.active, .controls button:hover { background:var(--navy); color:#fff; }
+  .controls .manual button { padding:6px 10px; border-color:var(--orange); color:var(--orange); }
+  .grid { display:grid; grid-template-columns: 1fr 330px; gap:16px; }
+  canvas { width:100%; border:1px solid #e2e2e2; border-radius:4px; background:#fff; }
+  .panel { background:var(--light); border-radius:6px; padding:12px 14px; }
+  .panel h2 { font-size:13px; color:var(--navy); margin-bottom:8px; }
+  #threads { display:grid; grid-template-columns:repeat(16, 1fr); gap:3px; min-height:60px; }
+  .th { aspect-ratio:1; border-radius:2px; background:#dfe4f0; transition: background .2s; }
+  .th.on { background:var(--navy); }
+  .th.base { outline:1.5px solid var(--orange); outline-offset:-1.5px; }
+  .kpis { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .kpi { background:#fff; border-radius:5px; padding:8px 10px; }
+  .kpi .v { font-size:20px; font-weight:bold; color:var(--navy); }
+  .kpi .v.bad { color:#c0392b; }
+  .kpi .l { font-size:10.5px; color:#888; }
+  .gaugewrap { background:#fff; border-radius:5px; padding:10px; margin-top:10px; }
+  .gauge { height:18px; background:#eee; border-radius:9px; position:relative; overflow:hidden; }
+  .gauge .fill { height:100%; background:var(--navy); border-radius:9px; transition:width .2s, background .2s; }
+  .gauge .slaline { position:absolute; top:-3px; bottom:-3px; width:2px; background:#c0392b; }
+  .leg { font-size:10.5px; color:#888; margin-top:4px; }
+</style>
+</head>
+<body>
+<h1>강화학습 Worker Thread 튜닝 시뮬레이션 — __ALGO__ 정책 내장</h1>
+<div class="sub">고정 인스턴스 + Undertow worker thread pool (v1 threadpool 환경의 JS 포팅) · 비단조 용량 · SLA 200ms · 주황 테두리 = 기본값(c_base)</div>
+
+<div class="controls">
+  정책:
+  <button id="pol-rl" class="active">RL (__ALGO__)</button>
+  <button id="pol-rule">Rule-based (임계값)</button>
+  <button id="pol-static">Static</button>
+  <button id="pol-manual">수동</button>
+  <span class="manual" id="manualBtns" style="display:none">
+    <button id="m-down">− 4 thread</button><button id="m-up">+ 4 thread</button>
+  </span>
+  &nbsp;|&nbsp; 속도:
+  <select id="speed">
+    <option value="220">보통</option>
+    <option value="80">빠르게</option>
+    <option value="500">천천히</option>
+  </select>
+  <button id="pause">일시정지</button>
+  <button id="reset">새 트래픽으로 재시작</button>
+</div>
+
+<div class="grid">
+  <div>
+    <canvas id="chartTraffic" height="150"></canvas>
+    <canvas id="chartLatency" height="150" style="margin-top:10px"></canvas>
+    <canvas id="chartC" height="120" style="margin-top:10px"></canvas>
+  </div>
+  <div class="panel">
+    <h2>Worker threads (■ 활성)</h2>
+    <div id="threads"></div>
+    <div class="gaugewrap">
+      <div style="font-size:11px;color:#666;margin-bottom:4px">응답 지연 (SLA 200ms)</div>
+      <div class="gauge"><div class="fill" id="latFill"></div><div class="slaline" id="slaLine"></div></div>
+      <div class="leg" id="latText"></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="kStep">0</div><div class="l">step</div></div>
+      <div class="kpi"><div class="v" id="kReward">0</div><div class="l">누적 보상</div></div>
+      <div class="kpi"><div class="v" id="kViol">0</div><div class="l">SLA 위반 step 수</div></div>
+      <div class="kpi"><div class="v" id="kC">0</div><div class="l">현재 thread 수</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const POLICY = /*__POLICY__*/null;   // 학습된 MLP 가중치 (export_policy.py가 주입)
+const ENV = /*__ENV__*/null;         // 환경 설정 (config.THREADPOOL)
+
+// ---------------- 유틸: 시드 RNG ----------------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+let rng = mulberry32(Date.now()|0);
+function gauss(){let u=0,v=0;while(u===0)u=rng();while(v===0)v=rng();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+// ---------------- 트래픽 생성 (envs/traffic.py 포팅) ----------------
+function makeTraffic(n, base){
+  const t=[...Array(n).keys()].map(i=>2*Math.PI*i/(n-1));
+  const p1=(rng()-0.5), p2=(rng()-0.5);
+  const a1=0.6+0.6*rng(), a2=0.8+0.8*rng();
+  const lam=t.map(x=>base*(1+a1*Math.exp(-((x-(0.55*Math.PI+p1))**2)/0.18)
+                            +a2*Math.exp(-((x-(1.35*Math.PI+p2))**2)/0.25)));
+  const nb=1+Math.floor(rng()*3);
+  for(let b=0;b<nb;b++){const st=Math.floor(rng()*(n-16)),w=5+Math.floor(rng()*11),bo=0.5+rng();
+    for(let i=st;i<st+w;i++)lam[i]*=(1+bo);}
+  return lam.map(v=>Math.max(1,v*Math.min(1.15,Math.max(0.85,1+0.04*gauss()))));
+}
+
+// ---------------- 환경 (envs/threadpool_env.py 포팅) ----------------
+function capacity(c){ // 비단조 용량: knee 초과 시 컨텍스트 스위칭 오버헤드
+  const over=Math.max(0,c-ENV.c_knee);
+  return c*ENV.mu_thread/(1+ENV.alpha_cs*over*over/(ENV.c_knee*ENV.c_knee));
+}
+class Env{
+  reset(){this.traffic=makeTraffic(ENV.steps,ENV.lam_base);this.t=0;this.c=ENV.c_init;
+    this.backlog=0;this.latency=1/ENV.mu_thread;return this.obs();}
+  obs(){const lam=this.traffic[Math.min(this.t,ENV.steps-1)];
+    const prev=this.t>0?this.traffic[this.t-1]:lam;const rho=lam/capacity(this.c);
+    return [lam/ENV.lam_max,(lam-prev)/ENV.lam_max,Math.min(rho,2),
+      Math.min(this.latency/ENV.sla,5),this.c/ENV.c_max,
+      Math.min(this.backlog/capacity(ENV.c_max),5)];}
+  step(action){const d=(action-1)*ENV.c_step;
+    this.c=Math.min(ENV.c_max,Math.max(ENV.c_min,this.c+d));
+    const lam=this.traffic[this.t];const cap=capacity(this.c);
+    this.backlog=Math.max(0,this.backlog+(lam-cap));
+    const rho=lam/cap;let w=1/ENV.mu_thread;
+    if(rho<1)w+=rho/(cap*Math.max(1-rho,0.02));else w+=1/(cap*0.02);
+    w+=this.backlog/cap;this.latency=w;
+    const slaEx=Math.max(0,(w-ENV.sla)/ENV.sla);
+    // 비용: c_base 초과분에만 부과 + 기본값 미만 페널티
+    let cost,under=0;
+    if(ENV.c_base!=null){
+      cost=Math.max(0,this.c-ENV.c_base)/Math.max(ENV.c_max-ENV.c_base,1);
+      under=Math.max(0,ENV.c_base-this.c)/ENV.c_base;
+    }else{cost=this.c/ENV.c_max;}
+    const r=-ENV.w_sla*Math.min(slaEx,5)-ENV.w_cost*cost
+            -(ENV.w_under||0)*under-ENV.w_thrash*Math.abs(d)/ENV.c_step;
+    this.t+=1;
+    return {obs:this.obs(),r,done:this.t>=ENV.steps,lam,viol:w>ENV.sla};}
+}
+
+// ---------------- 정책 ----------------
+function mlpForward(x){
+  const act=v=>Math.max(0,v); // DQN relu (PPO actor도 argmax 순위 유지)
+  function layer(inp,W,b,f){const out=new Array(b.length).fill(0);
+    for(let j=0;j<b.length;j++){let s=b[j];for(let i=0;i<inp.length;i++)s+=inp[i]*W[i][j];
+      out[j]=f?f(s):s;}return out;}
+  let h=layer(x,POLICY.l1_W,POLICY.l1_b,act);
+  h=layer(h,POLICY.l2_W,POLICY.l2_b,act);
+  const q=layer(h,POLICY.l3_W,POLICY.l3_b,null);
+  return q.indexOf(Math.max(...q));
+}
+let ruleCool=0;
+function rulePolicy(obs){const rho=obs[2];
+  if(ruleCool>0){ruleCool--;return 1;}
+  if(rho>0.7){ruleCool=3;return 2;}
+  if(rho<0.3){ruleCool=3;return 0;}
+  return 1;}
+let manualAction=1;
+
+// ---------------- 시뮬레이션 루프 ----------------
+let env=new Env(),obs=env.reset(),mode="rl",timer=null,paused=false;
+let hist={lam:[],lat:[],c:[]},reward=0,viol=0;
+
+function tick(){
+  if(paused)return;
+  let a;
+  if(mode==="rl")a=mlpForward(obs);
+  else if(mode==="rule")a=rulePolicy(obs);
+  else if(mode==="static")a=1;
+  else {a=manualAction;manualAction=1;}
+  const out=env.step(a);
+  obs=out.obs;reward+=out.r;viol+=out.viol?1:0;
+  hist.lam.push(out.lam);hist.lat.push(env.latency*1000);hist.c.push(env.c);
+  draw();
+  if(out.done)resetSim(false);
+}
+
+// ---------------- 렌더링 ----------------
+function drawChart(id,data,color,yMax,slaY,title){
+  const cv=document.getElementById(id),ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.font="11px sans-serif";ctx.fillStyle="#666";ctx.fillText(title,8,14);
+  const n=ENV.steps,m=Math.max(yMax,1);
+  if(slaY){ctx.strokeStyle="#c0392b";ctx.setLineDash([4,3]);ctx.beginPath();
+    const y=H-8-(slaY/m)*(H-30);ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();ctx.setLineDash([]);}
+  ctx.strokeStyle=color;ctx.lineWidth=1.8;ctx.beginPath();
+  data.forEach((v,i)=>{const x=i/n*W,y=H-8-Math.min(v/m,1)*(H-30);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.stroke();
+}
+function draw(){
+  drawChart("chartTraffic",hist.lam,"#555",ENV.lam_max,null,"트래픽 (req/s)");
+  drawChart("chartLatency",hist.lat,"#C55A11",ENV.sla*1000*3,ENV.sla*1000,"응답 지연 (ms) — 빨간 점선 = SLA");
+  drawChart("chartC",hist.c,"#1E2761",ENV.c_max,null,"worker thread 수 (기본값 "+ENV.c_base+")");
+  // thread 그리드 (c_max칸 중 c칸 활성, c_base 위치 표시)
+  const box=document.getElementById("threads");box.innerHTML="";
+  for(let i=0;i<ENV.c_max;i++){
+    const d=document.createElement("div");
+    d.className="th"+(i<env.c?" on":"")+(i===ENV.c_base-1?" base":"");
+    box.appendChild(d);
+  }
+  const ms=env.latency*1000,pct=Math.min(ms/(ENV.sla*1000*3),1)*100;
+  const fill=document.getElementById("latFill");
+  fill.style.width=pct+"%";fill.style.background=ms>ENV.sla*1000?"#c0392b":"#1E2761";
+  document.getElementById("slaLine").style.left=(100/3)+"%";
+  document.getElementById("latText").textContent=ms.toFixed(0)+" ms";
+  document.getElementById("kStep").textContent=env.t;
+  document.getElementById("kReward").textContent=reward.toFixed(1);
+  const kv=document.getElementById("kViol");kv.textContent=viol;kv.className=viol>0?"v bad":"v";
+  document.getElementById("kC").textContent=env.c;
+}
+
+// ---------------- 컨트롤 ----------------
+function setMode(m,btn){mode=m;ruleCool=0;
+  document.querySelectorAll(".controls button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("manualBtns").style.display=(m==="manual")?"inline":"none";}
+document.getElementById("pol-rl").onclick=e=>setMode("rl",e.target);
+document.getElementById("pol-rule").onclick=e=>setMode("rule",e.target);
+document.getElementById("pol-static").onclick=e=>setMode("static",e.target);
+document.getElementById("pol-manual").onclick=e=>setMode("manual",e.target);
+document.getElementById("m-up").onclick=()=>manualAction=2;
+document.getElementById("m-down").onclick=()=>manualAction=0;
+document.getElementById("pause").onclick=e=>{paused=!paused;e.target.textContent=paused?"재개":"일시정지";};
+function resetSim(newSeed){if(newSeed)rng=mulberry32((Date.now()*7919)|0);
+  env=new Env();obs=env.reset();hist={lam:[],lat:[],c:[]};reward=0;viol=0;draw();}
+document.getElementById("reset").onclick=()=>resetSim(true);
+function setSpeed(ms){if(timer)clearInterval(timer);timer=setInterval(tick,ms);}
+document.getElementById("speed").onchange=e=>setSpeed(+e.target.value);
+draw();setSpeed(220);
+</script>
+</body>
+</html>
