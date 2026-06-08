@@ -1,0 +1,26 @@
+Mountain Car Actor-Critic
+
+========== ★ 최적 Hyper-parameter ==========
+best_name: run02_g0.990_pi0.0005_v0.001_h256_sh10_ent0.01
+selection_criterion: max_total_reward
+n_hp_runs: 20
+
+--- Hyper-parameters ---
+gamma: 0.99
+lr_pi: 0.0005
+lr_v: 0.001
+hidden: 256
+shaping_scale: 10.0
+entropy_coef: 0.01
+
+--- 성능 통계 ---
+max_total_reward: -85.0000
+max_reward_episode: 1383
+mean_last_50: -136.8800
+min_total_reward: -200.0000
+mean_all_episodes: -184.9680
+std_all_episodes: 26.3575
+success_count: 477
+success_rate_pct: 31.80
+episodes: 1500
+seed: 0

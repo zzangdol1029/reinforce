@@ -1,0 +1,21 @@
+Quiz Q1 — Mountain Car DQN
+name: run20_g0.99_lr0.001_e0.15_b64_s50_h256
+gamma: 0.99
+lr: 0.001
+epsilon: 0.15
+buffer_size: 100000
+batch_size: 64
+sync_interval: 50
+hidden1: 256
+hidden2: 256
+episodes: 800
+seed: 0
+
+max_total_reward: -128.0
+max_reward_episode: 761
+mean_last_50: -198.56
+min_total_reward: -200.0
+mean_all: -199.3775
+std_all: 5.209365964299303
+success_count: 16
+success_rate_pct: 2.0

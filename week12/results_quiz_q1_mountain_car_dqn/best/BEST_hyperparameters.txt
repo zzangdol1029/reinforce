@@ -1,0 +1,28 @@
+Mountain Car DQN
+
+========== ★ 최적 Hyper-parameter ==========
+best_name: run04_g0.99_lr0.0005_ee0.02_b32_s10_h256_sh10
+selection_criterion: max_total_reward
+n_hp_runs: 20
+
+--- Hyper-parameters ---
+gamma: 0.99
+lr: 0.0005
+epsilon: 0.02
+buffer_size: 100000
+batch_size: 32
+sync_interval: 10
+hidden1: 256
+hidden2: 256
+
+--- 성능 통계 ---
+max_total_reward: -83.0000
+max_reward_episode: 1471
+mean_last_50: -104.5600
+min_total_reward: -200.0000
+mean_all_episodes: -173.2260
+std_all_episodes: 35.0625
+success_count: 686
+success_rate_pct: 45.73
+episodes: 1500
+seed: 0

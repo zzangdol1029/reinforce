@@ -1,0 +1,17 @@
+Quiz Q1 — Mountain Car Actor-Critic
+name: run06_g0.95_pi0.0001_v0.0002_h128
+gamma: 0.95
+lr_pi: 0.0001
+lr_v: 0.0002
+hidden: 128
+episodes: 800
+seed: 0
+
+max_total_reward: -200.0
+max_reward_episode: 0
+mean_last_50: -200.0
+min_total_reward: -200.0
+mean_all: -200.0
+std_all: 0.0
+success_count: 0
+success_rate_pct: 0.0

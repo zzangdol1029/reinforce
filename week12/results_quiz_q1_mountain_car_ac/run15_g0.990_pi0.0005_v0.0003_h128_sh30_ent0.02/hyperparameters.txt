@@ -1,0 +1,20 @@
+Quiz Q1 — Mountain Car Actor-Critic
+name: run15_g0.990_pi0.0005_v0.0003_h128_sh30_ent0.02
+gamma: 0.99
+lr_pi: 0.0005
+lr_v: 0.0003
+hidden: 128
+use_reward_shaping: True
+shaping_scale: 30.0
+entropy_coef: 0.02
+episodes: 1500
+seed: 0
+
+max_total_reward: -167.0
+max_reward_episode: 1467
+mean_last_50: -198.78
+min_total_reward: -200.0
+mean_all: -199.95933333333332
+std_all: 1.116697313012299
+success_count: 2
+success_rate_pct: 0.13333333333333333
