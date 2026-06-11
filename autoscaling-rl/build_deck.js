@@ -1,4 +1,4 @@
-/* 발표 PPT 생성 스크립트 (pptxgenjs)
+/* 발표 PPT 생성 스크립트 (pptxgenjs) — v2
  * 사용: npm install pptxgenjs && node build_deck.js
  * results/ 그래프가 없으면 자리표시 박스로 생성된다 (실행 후 재생성 권장).
  */
@@ -129,31 +129,66 @@ function addImg(slide, file, opt, label) {
     x: 0.7, y: 2.45, w: 8.6, h: 0.9, fontSize: 15, color: ICE, fontFace: BFONT, margin: 0 });
   s.addText([
     { text: "김완수  ·  충북대학교 산업인공지능학과", options: { breakLine: true, fontSize: 14, bold: true } },
+    { text: "zzangdol@cbnu.ac.kr", options: { breakLine: true, fontSize: 11, color: ICE } },
     { text: "2026. 6. 17", options: { fontSize: 12 } },
-  ], { x: 0.7, y: 4.0, w: 8.6, h: 0.8, color: "FFFFFF", fontFace: BFONT, margin: 0 });
+  ], { x: 0.7, y: 3.95, w: 8.6, h: 1.0, color: "FFFFFF", fontFace: BFONT, margin: 0 });
 }
 
 // ================================================================ 2. 목차
 {
-  const s = content("목차", null);
+  const s = content("목차 (Contents)", null);
   const items = [
-    ["01", "적용 문제", "고정 인스턴스 제약과 worker thread 튜닝, RL 적용 동기"],
-    ["02", "모델 정의", "큐잉 시뮬레이터 (v1 공식/v2 이산사건), MDP 정의"],
-    ["03", "방법 / 알고리즘", "DQN(Double DQN), PPO, 룰 기반 베이스라인"],
-    ["04", "프로그램 소스", "구조, 환경 · 에이전트 핵심 코드"],
-    ["05", "결과 / 분석", "학습 곡선, 정책 거동, 정책별 종합 비교"],
-    ["06", "기여 / 향후 연구", "기여도, 한계, 실제 시스템 적용 방향"],
+    ["01", "프로젝트 개요 (Overview)", "프로젝트 목표, 과제 요구사항 대응"],
+    ["02", "적용 문제 (Problem)", "고정 인스턴스 제약과 worker thread 튜닝, RL 적용 동기"],
+    ["03", "모델 정의 (MDP Modeling)", "큐잉 시뮬레이터, State · Action · Reward 정의"],
+    ["04", "방법 / 알고리즘 (Methodology)", "DQN(Double DQN), PPO(Actor-Critic), 베이스라인"],
+    ["05", "프로그램 소스 (Implementation)", "구조, 환경 · 에이전트 핵심 코드 설명"],
+    ["06", "실험 구성 · 평가 방법 (Settings)", "하이퍼파라미터, 과적합 방지, 평가 지표"],
+    ["07", "결과 및 분석 (Results & Analysis)", "학습 곡선, 정책 거동, 정책별 종합 비교"],
+    ["08", "한계 · 기여 · 향후 연구 (Conclusion)", "한계점 및 토론, 기여도, 향후 연구방향"],
   ];
   items.forEach(([no, t, d], i) => {
     const col = i % 2, row = Math.floor(i / 2);
-    const x = 0.55 + col * 4.75, y = 1.15 + row * 1.35;
-    s.addText(no, { x, y, w: 0.75, h: 0.8, fontSize: 30, bold: true, color: ICE,
+    const x = 0.55 + col * 4.75, y = 1.0 + row * 1.02;
+    s.addText(no, { x, y, w: 0.75, h: 0.7, fontSize: 26, bold: true, color: ICE,
       fontFace: HFONT, margin: 0 });
-    s.addText(t, { x: x + 0.78, y: y + 0.02, w: 3.7, h: 0.4, fontSize: 16, bold: true,
+    s.addText(t, { x: x + 0.72, y: y + 0.02, w: 3.95, h: 0.35, fontSize: 13.5, bold: true,
       color: NAVY, fontFace: HFONT, margin: 0 });
-    s.addText(d, { x: x + 0.78, y: y + 0.44, w: 3.8, h: 0.62, fontSize: 11, color: GRAY,
+    s.addText(d, { x: x + 0.72, y: y + 0.38, w: 3.95, h: 0.5, fontSize: 10, color: GRAY,
       fontFace: BFONT, margin: 0 });
   });
+  s.addText("※ 과제 요구 PPT 구성 — 적용 문제 → 모델(state·action 정의) → 방법/알고리즘 → 프로그램 소스 → 결과/분석 → 기여도·향후 연구방향 — 을 따른다",
+    { x: 0.55, y: 5.12, w: 8.9, h: 0.35, fontSize: 10.5, italic: true, color: GRAY,
+      fontFace: BFONT, margin: 0 });
+}
+
+// ================================================== 2b. 프로젝트 개요 — 과제 요구사항 대응
+{
+  const s = content("프로젝트 개요 — 목표 및 과제 요구사항 대응", "개요");
+  s.addText([
+    { text: "프로젝트 목표  ", options: { bold: true, color: NAVY } },
+    { text: "고정 인스턴스 환경에서 트래픽 변화에 따라 worker thread pool을 동적으로 튜닝하는 정책을 강화학습(DQN · PPO)으로 학습하고, 룰 기반 · 고정 정책 대비 SLA 위반과 자원 비용을 정량 비교한다.", options: { color: INK } },
+  ], { x: 0.55, y: 0.95, w: 8.9, h: 0.7, fontSize: 13, fontFace: BFONT, valign: "top", margin: 0 });
+  const rows = [
+    [
+      { text: "과제 요구사항", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
+      { text: "본 프로젝트 적용", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
+    ],
+    [{ text: "강화학습 모델 — DQN, Actor-Critic, PPO, SAC 등\n(여러 개 적용하여 비교 가능)", options: { bold: true, fill: { color: LIGHT } } },
+      "Double DQN + PPO(Actor-Critic 계열) 2종 직접 구현 → 룰 기반 · 고정 정책 포함 4개 정책 비교 (SAC · 연속 제어는 향후 연구)"],
+    [{ text: "딥러닝 라이브러리 — DeZero(교재),\nPyTorch, TensorFlow 등", options: { bold: true, fill: { color: LIGHT } } },
+      "교재 DeZero 사용 — MLP · 옵티마이저만 라이브러리, DQN/PPO 알고리즘 로직은 전부 직접 구현"],
+    [{ text: "OpenAI Gym 등 시뮬레이터 ·\nOpen Data Set 활용", options: { bold: true, fill: { color: LIGHT } } },
+      "Gymnasium 표준 인터페이스(reset/step)를 따르는 자체 큐잉 시뮬레이터 2종 구현 (v1 큐잉 공식 / v2 이산사건 · p95)"],
+    [{ text: "제출물 — PPT 자료 + 프로그램 소스", options: { bold: true, fill: { color: LIGHT } } },
+      "본 발표자료 + autoscaling-rl/ 전체 소스 (실행 방법 README 포함)"],
+  ];
+  s.addTable(rows, { x: 0.55, y: 1.75, w: 8.9, colW: [3.5, 5.4], fontSize: 10.5,
+    fontFace: BFONT, color: INK, border: { pt: 0.75, color: "CCCCCC" },
+    valign: "middle", rowH: 0.62 });
+  s.addText("→ 본 자료의 구성: 적용 문제 → 모델(State · Action · Reward 정의) → 방법/알고리즘 → 프로그램 소스 → 결과 제시/분석 → 기여도 · 향후 연구방향",
+    { x: 0.55, y: 4.95, w: 8.9, h: 0.45, fontSize: 12, bold: true, color: NAVY,
+      fontFace: HFONT, margin: 0 });
 }
 
 // ================================================== 3. 적용 문제 — 배경
@@ -436,9 +471,9 @@ function addImg(slide, file, opt, label) {
 
 // ================================================== 10. PPO
 {
-  const s = content("알고리즘 ② PPO (Clipped Surrogate)", "방법");
+  const s = content("알고리즘 ② PPO (Actor-Critic · Clipped Surrogate)", "방법");
   bullets(s, [
-    { t: "정책 경사(on-policy): 정책 π(a|s)를 직접 최적화", b: true },
+    { t: "정책 경사(on-policy) · Actor-Critic 구조: 정책 π(a|s)를 직접 최적화", b: true },
     { t: "Actor(정책)·Critic(가치) 분리 MLP, DeZero로 직접 구현", lv: 1 },
     { t: "GAE(λ=0.95): advantage 추정의 분산 감소", b: true },
     { t: "Clipped objective: 정책 갱신 비율을 [1−ε, 1+ε]로 제한 (ε=0.2)", b: true },
@@ -609,7 +644,7 @@ function addImg(slide, file, opt, label) {
 
 // ================================================== 16. 실험 설정
 {
-  const s = content("실험 설정", "실험");
+  const s = content("실험 구성 및 평가 방법 (Experiment Settings)", "실험");
   const rows = [
     [
       { text: "구분", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
@@ -716,7 +751,7 @@ function addImg(slide, file, opt, label) {
 
 // ================================================== 21b. v2 결과 placeholder
 {
-  const s = content("결과 ⑥ v2 이산사건 환경 — 학습 곡선 · 거동", "결과");
+  const s = content("결과 ④ v2 이산사건 환경 — 학습 곡선 · 거동", "결과");
   const cmds = "python train.py --env ev-threadpool --algo dqn --episodes 200\npython train.py --env ev-threadpool --algo ppo --episodes 300\npython evaluate.py --env ev-threadpool";
   [[0.55, "ev-threadpool 학습 곡선", "results/ev-threadpool_learning_curves.png"],
    [5.15, "ev-threadpool 정책 거동", "results/ev-threadpool_behavior.png"]].forEach(([x, t, p]) => {
@@ -733,7 +768,7 @@ function addImg(slide, file, opt, label) {
 }
 
 {
-  const s = content("결과 ⑦ v2 — 정책 종합 비교 (p95 SLA 기준)", "결과");
+  const s = content("결과 ⑤ v2 — 정책 종합 비교 (p95 SLA 기준)", "결과");
   const rows = [
     [
       { text: "정책", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
@@ -788,7 +823,7 @@ function addImg(slide, file, opt, label) {
 
 // ================================================== 23. 한계
 {
-  const s = content("한계점 및 토론", "토론");
+  const s = content("한계점 및 토론 (Limitations & Discussions)", "토론");
   bullets(s, [
     { t: "시뮬레이터와 실제의 간극 (sim-to-real gap)", b: true },
     { t: "시뮬레이터는 실제 JVM의 GC pause, JIT 워밍업, 요청 간 의존성을 단순화", lv: 1 },
@@ -804,7 +839,7 @@ function addImg(slide, file, opt, label) {
 
 // ================================================== 24. 기여 & 향후
 {
-  const s = content("기여도 및 향후 연구", "결론");
+  const s = content("기여도 및 향후 연구 (Contribution & Future Work)", "결론");
   s.addText("기여", { x: 0.55, y: 0.95, w: 4.3, h: 0.35, fontSize: 15, bold: true,
     color: NAVY, fontFace: HFONT, margin: 0 });
   bullets(s, [
