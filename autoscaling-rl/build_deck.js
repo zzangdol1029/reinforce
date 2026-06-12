@@ -199,7 +199,7 @@ function addImg(slide, file, opt, label) {
     { t: "그런데 운영 현장의 worker thread pool 크기는 한 번 튜닝한 고정값", lv: 1 },
     { t: "자원이 부족하면 → 요청이 큐에 쌓여 응답 지연 폭증, SLA 위반", lv: 1 },
     { t: "thread가 남으면 → 메모리(스택)·컨텍스트 스위칭 낭비", lv: 1 },
-    { t: "두 비용은 트레이드오프 관계 — '항상 넉넉히'는 답이 아니다", b: true, c: ORANGE },
+    { t: "두 비용의 관계는 보기보다 단순하지 않다 — '항상 넉넉히'는 답이 아니다 (다음 장)", b: true, c: ORANGE },
   ], { x: 0.55, y: 0.95, w: 8.9, h: 2.0, fontSize: 13.5 });
   kpi(s, 0.55, 3.15, 2.9, "지연 ↑", "부족: 큐 대기 → SLA 위반 → 사용자 이탈", ORANGE);
   kpi(s, 3.6, 3.15, 2.9, "비용 ↑", "과잉: 스레드 메모리 · 컨텍스트 스위칭", NAVY);
@@ -207,6 +207,32 @@ function addImg(slide, file, opt, label) {
   s.addText("→ 트래픽을 보면서 자원을 실시간으로 조절하는 '정책'이 필요하다",
     { x: 0.55, y: 4.55, w: 8.9, h: 0.5, fontSize: 15, bold: true, color: NAVY,
       fontFace: HFONT, margin: 0 });
+}
+
+// ================================================== 3b. 단순 트레이드오프가 아닌 이유
+{
+  const s = content("적용 문제 — 두 비용은 '단순 트레이드오프'가 아니다", "적용 문제");
+
+  s.addShape(pres.shapes.RECTANGLE, { x: 0.55, y: 0.92, w: 8.9, h: 1.02, fill: { color: LIGHT } });
+  s.addShape(pres.shapes.RECTANGLE, { x: 0.55, y: 0.92, w: 0.07, h: 1.02, fill: { color: NAVY } });
+  s.addText([
+    { text: "트레이드오프(trade-off)란?  ", options: { bold: true, color: NAVY } },
+    { text: "하나를 좋게 하면 반드시 다른 하나가 나빠지는 '교환' 관계.", options: { color: INK, breakLine: true } },
+    { text: "여기서는 — thread를 늘리면 지연↓ 대신 자원 비용↑, thread를 줄이면 비용↓ 대신 지연↑.", options: { color: INK, breakLine: true } },
+    { text: "교환이 항상 성립한다면 둘을 저울질해 균형점 '하나'만 찾으면 끝 — RL이 필요 없다.", options: { color: INK } },
+  ], { x: 0.82, y: 1.0, w: 8.45, h: 0.88, fontSize: 11.5, fontFace: BFONT, valign: "top", margin: 0 });
+
+  s.addText("그러나 이 문제에서는 '교환'이 깨진다 — 그래프의 빨간 구간은 비용과 지연이 함께 나빠지는 구간",
+    { x: 0.55, y: 2.08, w: 8.9, h: 0.35, fontSize: 12.5, bold: true, color: ORANGE, fontFace: HFONT, margin: 0 });
+
+  addImg(s, "tradeoff_curves.png", { x: 0.55, y: 2.52, w: 4.35, h: 2.35 }, "두 비용 곡선");
+  addImg(s, "tradeoff_plane.png", { x: 5.1, y: 2.52, w: 4.35, h: 2.35 }, "비용-지연 평면");
+  s.addText("① 비단조 용량: c*를 넘으면 증설할수록 비용↑ 지연↑ — 교환이 아니라 둘 다 손해",
+    { x: 0.55, y: 4.9, w: 4.35, h: 0.42, fontSize: 9.5, color: GRAY, fontFace: BFONT, margin: 0 });
+  s.addText("② 교환이라면 곡선이 한 방향이어야 하나, c*에서 접혀 되돌아 올라감",
+    { x: 5.1, y: 4.9, w: 4.35, h: 0.42, fontSize: 9.5, color: GRAY, fontFace: BFONT, margin: 0 });
+  s.addText("→ 게다가 c*와 교환 구간은 트래픽 λ에 따라 계속 이동 — 균형점 '하나'가 아니라 움직이는 최적점을 추적하는 문제 = RL",
+    { x: 0.55, y: 5.24, w: 8.7, h: 0.35, fontSize: 12, bold: true, color: NAVY, fontFace: HFONT, margin: 0 });
 }
 
 // ================================================== 4. 왜 강화학습인가
@@ -279,68 +305,62 @@ function addImg(slide, file, opt, label) {
     { x: 5.3, y: 4.62, w: 4.3, h: 0.55, fontSize: 9.5, color: GRAY, fontFace: BFONT, margin: 0 });
 }
 
-// ================================================== 6b. RL 상호작용 구조도
+// ================================================== 6b. 강화학습 기본 구조
 {
-  const s = content("모델 — Agent · Environment 상호작용 구조", "모델 정의");
+  const s = content("모델 — 강화학습 기본 구조 (Agent · State · Reward)", "모델 정의");
 
-  // ---------- Agent 박스 (왼쪽) ----------
-  s.addShape(pres.shapes.RECTANGLE, { x: 0.55, y: 1.5, w: 3.1, h: 2.5,
+  s.addShape(pres.shapes.RECTANGLE, { x: 0.7, y: 1.05, w: 3.0, h: 1.15,
     fill: { color: LIGHT }, line: { color: NAVY, width: 1.5 } });
-  s.addText("Agent", { x: 0.55, y: 1.62, w: 3.1, h: 0.4, fontSize: 17, bold: true,
+  s.addText("Agent", { x: 0.7, y: 1.14, w: 3.0, h: 0.35, fontSize: 16, bold: true,
     color: NAVY, fontFace: HFONT, align: "center", margin: 0 });
-  s.addText("스케일링 정책 (DQN / PPO)", { x: 0.55, y: 2.02, w: 3.1, h: 0.32,
-    fontSize: 11.5, bold: true, color: ORANGE, fontFace: HFONT, align: "center", margin: 0 });
-  bullets(s, [
-    { t: "정책 신경망 MLP (2×128)", fs: 10.5, sp: 3 },
-    { t: "입력: 상태 벡터 (관측 변수)", fs: 10.5, sp: 3 },
-    { t: "출력: 행동 3개 중 1개 선택", fs: 10.5, sp: 3 },
-    { t: "학습: 누적 보상 최대화", fs: 10.5, sp: 3 },
-  ], { x: 0.8, y: 2.45, w: 2.7, h: 1.45 });
+  s.addText("스케일링 정책 π(a|s) — DQN / PPO\n상태를 보고 행동 선택, 누적 보상 최대화",
+    { x: 0.82, y: 1.52, w: 2.76, h: 0.62, fontSize: 9.5, color: INK, fontFace: BFONT,
+      align: "center", margin: 0 });
 
-  // ---------- Environment 박스 (오른쪽) ----------
-  s.addShape(pres.shapes.RECTANGLE, { x: 6.35, y: 1.5, w: 3.1, h: 2.5,
+  s.addShape(pres.shapes.RECTANGLE, { x: 0.7, y: 3.55, w: 3.0, h: 1.15,
     fill: { color: LIGHT }, line: { color: ORANGE, width: 1.5 } });
-  s.addText("Environment", { x: 6.35, y: 1.62, w: 3.1, h: 0.4, fontSize: 17, bold: true,
+  s.addText("Environment", { x: 0.7, y: 3.64, w: 3.0, h: 0.35, fontSize: 16, bold: true,
     color: ORANGE, fontFace: HFONT, align: "center", margin: 0 });
-  s.addText("MSA 서비스 시뮬레이터", { x: 6.35, y: 2.02, w: 3.1, h: 0.32,
-    fontSize: 11.5, bold: true, color: NAVY, fontFace: HFONT, align: "center", margin: 0 });
-  bullets(s, [
-    { t: "트래픽 생성기 λ(t): 일일 피크+버스트", fs: 10.5, sp: 3 },
-    { t: "FCFS 큐: worker thread c개가 처리", fs: 10.5, sp: 3 },
-    { t: "비단조 용량·backlog·지연 계산", fs: 10.5, sp: 3 },
-    { t: "상태·보상을 만들어 Agent에 반환", fs: 10.5, sp: 3 },
-  ], { x: 6.6, y: 2.45, w: 2.75, h: 1.45 });
+  s.addText("MSA 큐잉 시뮬레이터\n행동 반영 → 다음 상태와 보상 계산",
+    { x: 0.82, y: 4.02, w: 2.76, h: 0.62, fontSize: 9.5, color: INK, fontFace: BFONT,
+      align: "center", margin: 0 });
 
-  // ---------- 행동 화살표 (Agent -> Env, 위) ----------
-  s.addShape(pres.shapes.LINE, { x: 3.65, y: 1.95, w: 2.7, h: 0,
+  s.addShape(pres.shapes.LINE, { x: 3.32, y: 2.2, w: 0, h: 1.35,
     line: { color: NAVY, width: 2.5, endArrowType: "triangle" } });
-  s.addText([
-    { text: "행동 aₜ", options: { bold: true, color: NAVY, fontSize: 12, breakLine: true } },
-    { text: "thread −4  /  유지  /  +4", options: { fontSize: 10.5, color: INK } },
-  ], { x: 3.65, y: 1.28, w: 2.7, h: 0.62, fontFace: BFONT, align: "center", margin: 0 });
+  s.addText("행동 aₜ\nthread −4 / 유지 / +4", { x: 3.42, y: 2.6, w: 1.4, h: 0.55,
+    fontSize: 9.5, bold: true, color: NAVY, fontFace: BFONT, margin: 0 });
 
-  // ---------- 상태+보상 화살표 (Env -> Agent, 박스 사이 아래쪽) ----------
-  s.addShape(pres.shapes.LINE, { x: 3.65, y: 3.45, w: 2.7, h: 0, flipH: true,
-    line: { color: ORANGE, width: 2.5, endArrowType: "triangle" } });
-  s.addText([
-    { text: "상태 sₜ₊₁  +  보상 rₜ₊₁", options: { bold: true, color: ORANGE, fontSize: 12, breakLine: true } },
-    { text: "(환경 관측 변수 + 행동 채점 결과)", options: { fontSize: 10, color: GRAY } },
-  ], { x: 3.55, y: 3.55, w: 2.9, h: 0.62, fontFace: BFONT, align: "center", margin: 0 });
+  s.addShape(pres.shapes.LINE, { x: 1.08, y: 2.2, w: 0, h: 1.35,
+    line: { color: ORANGE, width: 2.5, beginArrowType: "triangle" } });
+  s.addText("상태 sₜ₊₁ · 보상 rₜ₊₁", { x: 1.22, y: 2.72, w: 2.0, h: 0.3,
+    fontSize: 9.5, bold: true, color: ORANGE, fontFace: BFONT, margin: 0 });
 
-  // ---------- 하단: 상태 변수 / 보상 변수 정리 ----------
-  s.addShape(pres.shapes.RECTANGLE, { x: 0.55, y: 4.15, w: 4.35, h: 1.25, fill: { color: "FFFFFF" },
-    line: { color: ORANGE, width: 1 } });
-  s.addText("상태(환경) 변수 — Agent가 매 step 관측", { x: 0.7, y: 4.22, w: 4.1, h: 0.28,
-    fontSize: 10.5, bold: true, color: ORANGE, fontFace: HFONT, margin: 0 });
-  s.addText("트래픽 λ · λ 변화량(추세) · 이용률 ρ · p95지연/SLA ·\n평균지연/SLA · 현재 thread 수 c · backlog(잔여작업)",
-    { x: 0.7, y: 4.52, w: 4.1, h: 0.8, fontSize: 10, color: INK, fontFace: BFONT, margin: 0 });
+  s.addText("보상 rₜ₊₁: 행동의 좋고 나쁨을 채점 — SLA 위반 · 과잉 증설 · 잦은 변경에 페널티 (다음 장 상세)",
+    { x: 0.55, y: 4.95, w: 4.3, h: 0.5, fontSize: 9.5, color: GRAY, fontFace: BFONT, margin: 0 });
 
-  s.addShape(pres.shapes.RECTANGLE, { x: 5.1, y: 4.15, w: 4.35, h: 1.25, fill: { color: "FFFFFF" },
-    line: { color: NAVY, width: 1 } });
-  s.addText("보상 변수 — 행동의 좋고 나쁨을 채점", { x: 5.25, y: 4.22, w: 4.1, h: 0.28,
-    fontSize: 10.5, bold: true, color: NAVY, fontFace: HFONT, margin: 0 });
-  s.addText("SLA 초과 정도(p95 기준) · 기본값(c_base=16) 초과 증설분 ·\n기본값 미만 정도 · 행동 변경 여부  →  다음 장에서 상세",
-    { x: 5.25, y: 4.52, w: 4.1, h: 0.8, fontSize: 10, color: INK, fontFace: BFONT, margin: 0 });
+  const rows = [
+    [
+      { text: "상태 변수 (6,)", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
+      { text: "의미 — 왜 관측하는가", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
+    ],
+    [{ text: "λ  트래픽", options: { bold: true, fill: { color: LIGHT } } },
+      "현재 요청 도착률(req/s) — 지금 부하의 크기 (λ_max로 정규화)"],
+    [{ text: "Δλ  추세", options: { bold: true, fill: { color: LIGHT } } },
+      "직전 step 대비 증감 — 피크가 '오는 중'인지 알려 선제 대응의 근거"],
+    [{ text: "ρ  이용률", options: { bold: true, fill: { color: LIGHT } } },
+      "λ ÷ 처리용량 — 1에 가까울수록 큐 대기 폭증 직전이라는 위험 신호"],
+    [{ text: "W/SLA  지연", options: { bold: true, fill: { color: LIGHT } } },
+      "현재 응답지연 ÷ SLA — 1을 넘으면 SLA 위반, 서비스 품질 상태"],
+    [{ text: "c  thread 수", options: { bold: true, fill: { color: LIGHT } } },
+      "현재 자원량 (c_max로 정규화) — 과거 행동들의 누적 결과"],
+    [{ text: "backlog  잔여작업", options: { bold: true, fill: { color: LIGHT } } },
+      "과부하로 못 처리해 쌓인 작업 — 과거의 여파를 상태에 담아 MDP 성립"],
+  ];
+  s.addTable(rows, { x: 4.95, y: 1.05, w: 4.6, colW: [1.45, 3.15], fontSize: 9.5,
+    fontFace: BFONT, color: INK, border: { pt: 0.75, color: "CCCCCC" },
+    valign: "middle", rowH: 0.55 });
+  s.addText("모든 변수는 정규화·클리핑된 값 — envs/threadpool_env.py의 _obs()",
+    { x: 4.95, y: 5.0, w: 4.6, h: 0.3, fontSize: 9, color: GRAY, fontFace: BFONT, margin: 0 });
 }
 
 // ================================================== 6c. 보상 설계 상세
