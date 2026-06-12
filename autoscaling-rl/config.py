@@ -76,6 +76,7 @@ DQN = dict(
     eps_decay_frac=0.5,
     target_update=1_000,   # hard sync 주기 (step)
     learn_start=2_000,
+    train_freq=4,          # 4 step마다 1회 배치 학습 (표준 관행, 속도 개선)
 )
 
 # ---------------------------------------------------------------- PPO 권장값

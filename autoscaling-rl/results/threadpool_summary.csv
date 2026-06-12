@@ -1,0 +1,5 @@
+policy,reward,sla_rate,mean_cost,mean_latency_ms
+DQN,-44.90,0.0314,0.1302,150.8
+PPO,-60.74,0.0312,0.2728,154.9
+Rule-based,-65.75,0.0352,0.2883,182.2
+Static,-652.94,0.5028,0.0000,4218.0

@@ -127,7 +127,8 @@ def train_dqn(env_name: str, episodes: int, seed: int,
             s2, r, term, trunc, _ = env.step(a)
             done = term or trunc
             agent.remember(s, a, r, s2, done)
-            agent.learn()
+            if agent.step_count % C.DQN.get("train_freq", 1) == 0:
+                agent.learn()
             s = s2
             ep_r += r
         curve.append(ep_r)

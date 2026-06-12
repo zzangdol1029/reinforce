@@ -179,7 +179,7 @@ function addImg(slide, file, opt, label) {
     [{ text: "딥러닝 라이브러리 — DeZero(교재),\nPyTorch, TensorFlow 등", options: { bold: true, fill: { color: LIGHT } } },
       "교재 DeZero 사용 — MLP · 옵티마이저만 라이브러리, DQN/PPO 알고리즘 로직은 전부 직접 구현"],
     [{ text: "OpenAI Gym 등 시뮬레이터 ·\nOpen Data Set 활용", options: { bold: true, fill: { color: LIGHT } } },
-      "Gymnasium 표준 인터페이스(reset/step)를 따르는 자체 큐잉 시뮬레이터 2종 구현 (v1 큐잉 공식 / v2 이산사건 · p95)"],
+      "Gymnasium 표준 인터페이스(reset/step)를 따르는 큐잉 이론 기반 자체 시뮬레이터를 직접 구현"],
     [{ text: "제출물 — PPT 자료 + 프로그램 소스", options: { bold: true, fill: { color: LIGHT } } },
       "본 발표자료 + autoscaling-rl/ 전체 소스 (실행 방법 README 포함)"],
   ];
@@ -370,7 +370,7 @@ function addImg(slide, file, opt, label) {
   // 보상 수식
   s.addShape(pres.shapes.RECTANGLE, { x: 0.55, y: 0.95, w: 8.9, h: 0.62, fill: { color: LIGHT } });
   s.addText([
-    { text: "r  =  − 1.0·(p95 SLA 초과비율)", options: { bold: true, color: "C0392B" } },
+    { text: "r  =  − 1.0·(SLA 초과비율)", options: { bold: true, color: "C0392B" } },
     { text: "  − 0.30·(c − 16)⁺/48", options: { bold: true, color: NAVY } },
     { text: "  − 0.2·(16 − c)⁺/16", options: { bold: true, color: ORANGE } },
     { text: "  − 0.02·(행동 변경)", options: { bold: true, color: GRAY } },
@@ -382,7 +382,7 @@ function addImg(slide, file, opt, label) {
      "평소 트래픽에서는 증설하지 않고 기본값에 머무는 것이 최선", GREEN, "보상 ◎"],
     ["트래픽 증가 → 선제 증설로 SLA 방어", "증설분만 소액 비용 (−0.30·초과분/48)",
      "SLA 위반 페널티(−1.0×)보다 훨씬 싸다 → 피크엔 증설이 이득", NAVY, "보상 ○"],
-    ["대응 실패 → p95가 SLA 초과", "초과 정도에 비례한 큰 페널티 (최대 −5)",
+    ["대응 실패 → 지연이 SLA 초과", "초과 정도에 비례한 큰 페널티 (최대 −5)",
      "보상 체계에서 가장 비싼 실수 — SLA 준수가 최우선임을 학습", "C0392B", "페널티 ✕"],
     ["기본값 미만 감축 / 잦은 변경", "−0.2·미만 정도 / 변경마다 −0.02",
      "안전 여유 훼손과 설정 진동(thrashing)을 억제", ORANGE, "페널티 △"],
@@ -426,41 +426,10 @@ function addImg(slide, file, opt, label) {
     "capacity = c·μ_t / overhead",
   ].join("\n"), { x: 0.55, y: 4.35, w: 4.6, h: 1.0, fs: 10.5 });
   addImg(s, "capacity_curve.png", { x: 5.4, y: 1.15, w: 4.2, h: 2.36 }, "비단조 용량 곡선");
-  s.addText("실측 곡선: c=37 부근에서 용량 피크 → 그 이상은 역효과.\n룰 기반('이용률 높으면 늘려라')이 함정에 빠질 수 있는 구조",
+  s.addText("실측 곡선: c=39 부근에서 용량 피크 → 그 이상은 역효과.\n룰 기반('이용률 높으면 늘려라')이 함정에 빠질 수 있는 구조",
     { x: 5.4, y: 3.6, w: 4.2, h: 0.8, fontSize: 10.5, color: GRAY, fontFace: BFONT, margin: 0 });
 }
 
-
-// ================================================== 8b. v2 이산사건 환경
-{
-  const s = content("모델 — v2 이산사건 시뮬레이터 (충실도 향상)", "모델 정의");
-  s.addText("같은 MDP 구조에서 시뮬레이션 충실도를 올린 v2 환경을 추가 — 요청 단위 시뮬레이션으로 p95(tail latency) 기반 SLA 평가",
-    { x: 0.55, y: 0.9, w: 8.9, h: 0.55, fontSize: 13, color: INK, fontFace: BFONT, margin: 0 });
-  const rows = [
-    [
-      { text: "구분", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-      { text: "v1 — 큐잉 공식", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-      { text: "v2 — 이산사건 (event-driven)", options: { bold: true, color: "FFFFFF", fill: { color: ORANGE }, align: "center" } },
-    ],
-    [{ text: "지연 계산", options: { bold: true, fill: { color: LIGHT } } },
-      "M/M/c 공식으로 평균 근사", "요청 하나하나를 FCFS 큐에 배정해 정확히 계산"],
-    [{ text: "SLA 지표", options: { bold: true, fill: { color: LIGHT } } },
-      "평균 지연", "p95 (tail latency) — 실무 SLA와 동일 기준"],
-    [{ text: "처리시간", options: { bold: true, fill: { color: LIGHT } } },
-      "상수 (1/μ)", "lognormal heavy-tail — 가끔 오는 무거운 요청 재현"],
-    [{ text: "도메인 랜덤화", options: { bold: true, fill: { color: LIGHT } } },
-      "트래픽 패턴", "트래픽 패턴 + tail 강도(σ) — 과적합 방지 강화"],
-    [{ text: "용도", options: { bold: true, fill: { color: LIGHT } } },
-      "빠른 반복 실험 (1 ep ≈ 0.01s)", "충실도 높은 최종 평가 (1 ep ≈ 0.05~0.1s)"],
-  ];
-  s.addTable(rows, { x: 0.55, y: 1.5, w: 8.9, colW: [1.5, 3.2, 4.2], fontSize: 11.5,
-    fontFace: BFONT, color: INK, border: { pt: 0.75, color: "CCCCCC" },
-    valign: "middle", rowH: 0.5 });
-  bullets(s, [
-    { t: "스케일 결정·cold start·비단조 용량 등 문제 구조는 v1과 동일 — 같은 에이전트 코드로 학습", b: true },
-    { t: "scale-in은 drain 방식: 처리 중인 요청을 끊지 않고 한가한 워커부터 제거 (실제 운영과 동일)", lv: 1 },
-  ], { x: 0.55, y: 4.6, w: 8.9, h: 0.8, fontSize: 12 });
-}
 
 // ================================================== 9. DQN
 {
@@ -548,8 +517,8 @@ function addImg(slide, file, opt, label) {
     "├── config.py              # 환경·알고리즘 하이퍼파라미터",
     "├── envs/",
     "│   ├── traffic.py         # 일일 패턴+버스트 트래픽 생성기",
-    "│   ├── threadpool_env.py  # v1: thread 환경 (큐잉 공식)",
-    "│   ├── event_env.py       # v2: 이산사건 환경 (p95 SLA)",
+    "│   ├── threadpool_env.py  # thread 환경 (큐잉 공식)",
+    "│   ├── event_env.py       # (확장용) 이산사건 환경",
     "│   └── autoscale_env.py   # (확장용) 인스턴스 환경",
     "├── agents/",
     "│   ├── dqn.py             # Double DQN (직접 구현)",
@@ -671,9 +640,9 @@ function addImg(slide, file, opt, label) {
       { text: "값", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
     ],
     [{ text: "학습량", options: { bold: true, fill: { color: LIGHT } } },
-      "v1(threadpool): DQN 500, PPO 600 / v2(ev-threadpool): DQN 200, PPO 300 에피소드 권장 (1 ep = 288 step)"],
+      "DQN 500 에피소드, PPO 600 에피소드 (1 에피소드 = 288 step = 하루 트래픽)"],
     [{ text: "DQN", options: { bold: true, fill: { color: LIGHT } } },
-      "hidden 128, lr 5e-4, buffer 100k, batch 128, target sync 1000 step, ε 1.0→0.05 (학습 50%까지 감쇠)"],
+      "hidden 128, lr 5e-4, buffer 100k, batch 128, 4 step마다 1회 학습, target sync 1000 step, ε 1.0→0.05 (학습 50%까지 감쇠)"],
     [{ text: "PPO", options: { bold: true, fill: { color: LIGHT } } },
       "hidden 128, lr 3e-4, GAE λ 0.95, clip 0.2, rollout 4096, 10 epoch, minibatch 256, entropy 0.01"],
     [{ text: "네트워크", options: { bold: true, fill: { color: LIGHT } } },
@@ -686,7 +655,7 @@ function addImg(slide, file, opt, label) {
   s.addTable(rows, { x: 0.55, y: 1.0, w: 8.9, colW: [1.6, 7.3], fontSize: 11.5,
     fontFace: BFONT, color: INK, border: { pt: 0.75, color: "CCCCCC" },
     valign: "middle", rowH: 0.52 });
-  s.addText("컴퓨팅: CPU만으로 충분 (v1 1~2분, v2 3~5분 / 알고리즘당) — hp_search.py로 환경별 최적값 탐색 가능",
+  s.addText("컴퓨팅: CPU만으로 충분 (알고리즘당 수 분) — hp_search.py로 하이퍼파라미터 탐색 가능",
     { x: 0.55, y: 4.85, w: 8.9, h: 0.45, fontSize: 12, color: GRAY, fontFace: BFONT, margin: 0 });
 }
 
@@ -700,7 +669,7 @@ function addImg(slide, file, opt, label) {
     ["2", "검증 기반 best 체크포인트",
       "10 에피소드마다 검증 트래픽에서 greedy 평가 → 최고 성능 시점의 가중치를 별도 저장. 학습 후반의 정책 붕괴(v1 PPO에서 관찰)가 최종 모델을 오염시키지 않는다. 최종 평가는 항상 best 가중치로 수행."],
     ["3", "도메인 랜덤화",
-      "트래픽 위상·피크 크기·버스트 위치 + (v2) heavy-tail 강도 σ가 에피소드마다 무작위 — 특정 패턴을 암기하는 정책은 검증에서 걸러진다."],
+      "트래픽 위상·피크 크기·버스트 위치가 에피소드마다 무작위 — 특정 패턴을 암기하는 정책은 검증에서 걸러진다."],
   ];
   items.forEach(([no, t, d], i) => {
     const y = 1.0 + i * 1.42;
@@ -717,8 +686,8 @@ function addImg(slide, file, opt, label) {
 
 // ================================================== 17. 결과 ① v1 학습곡선
 {
-  const s = content("결과 ① v1 환경 — 학습 곡선", "결과");
-  addImg(s, "threadpool_learning_curves.png", { x: 0.55, y: 1.0, w: 6.2, h: 3.6 }, "v1 학습 곡선");
+  const s = content("결과 ① 학습 곡선", "결과");
+  addImg(s, "threadpool_learning_curves.png", { x: 0.55, y: 1.0, w: 6.2, h: 3.48 }, "v1 학습 곡선");
   bullets(s, [
     { t: "실선: 학습 보상(10-ep 이동평균) / 점선: 검증 트래픽 보상", b: true, fs: 11.5 },
     { t: "검증 곡선의 최고점에서 best 체크포인트가 저장됨 — 최종 평가에 사용", fs: 11.5 },
@@ -729,91 +698,44 @@ function addImg(slide, file, opt, label) {
 
 // ================================================== 18. 결과 ② v1 거동
 {
-  const s = content("결과 ② v1 환경 — 같은 트래픽에서의 정책 거동", "결과");
-  addImg(s, "threadpool_behavior.png", { x: 0.45, y: 0.92, w: 5.55, h: 4.44 }, "v1 정책 거동");
+  const s = content("결과 ② 같은 트래픽에서의 정책 거동", "결과");
+  addImg(s, "threadpool_behavior.png", { x: 0.45, y: 0.92, w: 4.97, h: 4.44 }, "v1 정책 거동");
   bullets(s, [
     { t: "위: 트래픽 / 가운데: worker thread 수 / 아래: 응답 지연(빨간 점선 = SLA)", fs: 11 },
     { t: "확인 포인트 ①: RL 정책이 평소 기본값(16) 부근을 유지하다 피크에 증설 후 복귀하는가", b: true },
     { t: "확인 포인트 ②: thread를 무작정 늘리지 않는가 — 비단조 용량의 함정 회피", lv: 1 },
     { t: "확인 포인트 ③: Rule-based의 사후 대응 지연 스파이크 vs RL의 선제 대응", lv: 1 },
     { t: "Static(회색)은 버스트마다 SLA 붕괴 → 동적 제어의 필요성 입증", lv: 1 },
-  ], { x: 6.15, y: 1.2, w: 3.5, h: 3.9, fontSize: 11.5 });
+  ], { x: 5.6, y: 1.2, w: 4.05, h: 3.9, fontSize: 11.5 });
 }
 
 // ================================================== 19. 결과 ③ v1 비교
 {
-  const s = content("결과 ③ v1 환경 — 정책 종합 비교", "결과");
+  const s = content("결과 ③ 정책 종합 비교", "결과");
+  s.addText("evaluate.py 출력 (results/threadpool_summary.csv) — 평가 전용 시드 20 에피소드, 비용은 c_base(16) 초과 증설분 기준",
+    { x: 0.55, y: 0.92, w: 8.9, h: 0.38, fontSize: 11.5, color: GRAY, fontFace: BFONT, margin: 0 });
+  const H = (t) => ({ text: t, options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } });
   const rows = [
-    [
-      { text: "정책", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-      { text: "보상", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-      { text: "SLA 위반률", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-      { text: "자원 비용", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-    ],
-    [{ text: "DQN", options: { bold: true } }, "(기입)", "(기입)", "(기입)"],
-    [{ text: "PPO", options: { bold: true } }, "(기입)", "(기입)", "(기입)"],
-    [{ text: "Rule-based", options: { bold: true } }, "(기입)", "(기입)", "(기입)"],
-    [{ text: "Static", options: { color: GRAY } }, "(기입)", "(기입)", "(기입)"],
+    [H("정책"), H("보상"), H("SLA 위반률"), H("자원 비용"), H("평균 지연")],
+    [{ text: "DQN", options: { bold: true, color: NAVY } },
+      { text: "−44.9", options: { bold: true } }, { text: "3.1%", options: { bold: true } },
+      { text: "0.130", options: { bold: true } }, { text: "151 ms", options: { bold: true } }],
+    [{ text: "PPO", options: { bold: true } }, "−60.7", "3.1%", "0.273", "155 ms"],
+    [{ text: "Rule-based", options: { bold: true } }, "−65.8", "3.5%", "0.288", "182 ms"],
+    [{ text: "Static", options: { color: GRAY } }, { text: "−652.9", options: { color: GRAY } },
+      { text: "50.3%", options: { color: GRAY } }, { text: "0.000", options: { color: GRAY } },
+      { text: "4,218 ms", options: { color: GRAY } }],
   ];
-  s.addText("evaluate.py 출력(results/threadpool_summary.csv)을 그대로 기입 — 비용은 c_base 초과분 기준",
-    { x: 0.55, y: 0.92, w: 8.9, h: 0.4, fontSize: 12, color: GRAY, fontFace: BFONT, margin: 0 });
-  s.addTable(rows, { x: 0.55, y: 1.45, w: 5.4, colW: [1.4, 1.3, 1.4, 1.3], fontSize: 11.5,
+  s.addTable(rows, { x: 0.55, y: 1.42, w: 5.55, colW: [1.25, 1.0, 1.15, 1.0, 1.15], fontSize: 11,
     fontFace: BFONT, color: INK, border: { pt: 0.75, color: "CCCCCC" },
     align: "center", valign: "middle", rowH: 0.42 });
   bullets(s, [
-    { t: "해석 가이드", b: true },
-    { t: "RL이 룰 기반 대비 같은 비용으로 SLA 위반을 줄이거나, 같은 위반률을 더 적은 증설로 달성하면 우위", lv: 1 },
-    { t: "DQN과 PPO가 다른 운영점(안전形 vs 효율形)에 수렴하는지 확인", lv: 1 },
-  ], { x: 6.15, y: 1.5, w: 3.5, h: 2.1, fontSize: 11.5 });
-  addImg(s, "threadpool_comparison.png", { x: 0.85, y: 3.55, w: 5.85, h: 1.85 }, "정책 비교 그래프");
-}
-
-
-// ================================================== 21b. v2 결과 placeholder
-{
-  const s = content("결과 ④ v2 이산사건 환경 — 학습 곡선 · 거동", "결과");
-  const cmds = "python train.py --env ev-threadpool --algo dqn --episodes 200\npython train.py --env ev-threadpool --algo ppo --episodes 300\npython evaluate.py --env ev-threadpool";
-  [[0.55, "ev-threadpool 학습 곡선", "results/ev-threadpool_learning_curves.png"],
-   [5.15, "ev-threadpool 정책 거동", "results/ev-threadpool_behavior.png"]].forEach(([x, t, p]) => {
-    s.addShape(pres.shapes.RECTANGLE, { x, y: 1.05, w: 4.3, h: 2.6,
-      fill: { color: "FAFAFA" }, line: { color: ORANGE, width: 1, dashType: "dash" } });
-    s.addText("[ " + t + " ]", { x, y: 1.9, w: 4.3, h: 0.4, fontSize: 13, bold: true,
-      color: ORANGE, fontFace: HFONT, align: "center", margin: 0 });
-    s.addText(p + "  를 여기에 삽입", { x, y: 2.35, w: 4.3, h: 0.35, fontSize: 10,
-      color: GRAY, fontFace: BFONT, align: "center", margin: 0 });
-  });
-  s.addText("실행 명령:", { x: 0.55, y: 3.95, w: 8.9, h: 0.3, fontSize: 11, bold: true,
-    color: NAVY, fontFace: HFONT, margin: 0 });
-  codeBox(s, cmds, { x: 0.55, y: 4.3, w: 8.9, h: 0.95, fs: 10 });
-}
-
-{
-  const s = content("결과 ⑤ v2 — 정책 종합 비교 (p95 SLA 기준)", "결과");
-  const rows = [
-    [
-      { text: "정책", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-      { text: "보상", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-      { text: "p95 SLA 위반률", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-      { text: "자원 비용", options: { bold: true, color: "FFFFFF", fill: { color: NAVY }, align: "center" } },
-    ],
-    [{ text: "DQN", options: { bold: true } }, "(기입)", "(기입)", "(기입)"],
-    [{ text: "PPO", options: { bold: true } }, "(기입)", "(기입)", "(기입)"],
-    [{ text: "Rule-based", options: { bold: true } }, "(기입)", "(기입)", "(기입)"],
-    [{ text: "Static", options: { color: GRAY } }, "(기입)", "(기입)", "(기입)"],
-  ];
-  s.addText("ev-threadpool — evaluate.py 출력(results/ev-threadpool_summary.csv)을 그대로 옮겨 적기",
-    { x: 0.55, y: 0.92, w: 8.9, h: 0.4, fontSize: 12, color: GRAY, fontFace: BFONT, margin: 0 });
-  s.addTable(rows, { x: 0.55, y: 1.45, w: 5.4, colW: [1.4, 1.3, 1.5, 1.2], fontSize: 11.5,
-    fontFace: BFONT, color: INK, border: { pt: 0.75, color: "CCCCCC" },
-    align: "center", valign: "middle", rowH: 0.42 });
-  s.addShape(pres.shapes.RECTANGLE, { x: 6.2, y: 1.45, w: 3.45, h: 2.1,
-    fill: { color: "FAFAFA" }, line: { color: ORANGE, width: 1, dashType: "dash" } });
-  s.addText("[ comparison 그래프 ]", { x: 6.2, y: 2.2, w: 3.45, h: 0.4, fontSize: 12,
-    bold: true, color: ORANGE, fontFace: HFONT, align: "center", margin: 0 });
-  bullets(s, [
-    { t: "체크 포인트: v1(평균 SLA) 대비 v2(p95 SLA)에서 정책 순위가 유지되는가?", b: true },
-    { t: "heavy-tail 환경에서는 '여유를 두는' 정책이 유리해질 수 있음 — 보상 가중치 해석과 함께 분석", lv: 1 },
-  ], { x: 0.55, y: 4.1, w: 8.9, h: 1.1, fontSize: 12 });
+    { t: "핵심 결과", b: true },
+    { t: "DQN: 룰 기반과 같은 SLA 수준(3.1% vs 3.5%)을 절반 이하의 증설 비용(0.130 vs 0.288)으로 달성", lv: 1 },
+    { t: "PPO도 룰 기반 대비 우위 — 단, DQN이 더 효율적인 운영점에 수렴", lv: 1 },
+    { t: "Static은 SLA 위반 50.3% — 동적 제어가 필수임을 입증", lv: 1, c: ORANGE },
+  ], { x: 6.3, y: 1.45, w: 3.35, h: 2.2, fontSize: 11 });
+  addImg(s, "threadpool_comparison.png", { x: 0.85, y: 3.6, w: 5.85, h: 1.85 }, "정책 비교 그래프");
 }
 
 // ================================================== 22. 결과 분석 종합
@@ -821,11 +743,11 @@ function addImg(slide, file, opt, label) {
   const s = content("결과 분석 — 세 가지 분석 축", "결과");
   const findings = [
     ["1", "동적 제어는 필수인가 — Static과의 격차",
-      "고정 thread(Static)는 버스트마다 SLA가 붕괴하는가? 동적 정책(룰·RL)과의 격차가 '튜닝 한 번 하고 방치'하는 관행의 비용을 정량화한다. (실행 결과로 채움)"],
+      "Static의 SLA 위반 50.3% vs 동적 정책 3.1~3.5% — 버스트마다의 붕괴가 실측으로 확인됐다. '튜닝 한 번 하고 방치'하는 관행의 비용이 정량화됐다."],
     ["2", "보상 설계 = 운영 정책 설계 — c_base의 효과",
-      "기본값 초과분에만 비용을 매기는 설계가 실제로 '평소 기본값 유지 → 피크 증설 → 복귀' 거동을 만들어내는가? 거동 그래프의 thread 궤적으로 확인한다."],
+      "거동 그래프에서 RL은 평소 기본값(16) 부근 유지 → 피크 증설 → 복귀를 보였다. DQN의 평균 비용 0.130은 룰 기반(0.288)의 45% — '필요할 때만 증설'이 보상 설계대로 유도됐다."],
     ["3", "알고리즘 특성 — on-policy vs off-policy",
-      "비단조 용량 + 드물지만 치명적인 backlog 상태에서 DQN(replay로 위기 경험 보존)과 PPO(현재 정책 데이터만 학습)의 강건성이 어떻게 갈리는가? v1·v2 공통으로 비교한다."],
+      "DQN(−44.9)이 PPO(−60.7)보다 우위 — experience replay가 드물지만 치명적인 위기(backlog 폭증) 경험을 보존해, 비단조 용량의 함정을 더 안정적으로 회피한 것으로 해석된다."],
   ];
   findings.forEach(([no, t, d], i) => {
     const y = 1.0 + i * 1.42;
@@ -863,7 +785,7 @@ function addImg(slide, file, opt, label) {
   s.addText("기여", { x: 0.55, y: 0.95, w: 4.3, h: 0.35, fontSize: 15, bold: true,
     color: NAVY, fontFace: HFONT, margin: 0 });
   bullets(s, [
-    { t: "운영 환경(고정 인스턴스 + Undertow)을 반영한 thread pool 튜닝 RL 환경을 충실도 2단계(v1 공식/v2 이산사건·p95)로 직접 설계·구현", fs: 11.5 },
+    { t: "운영 환경(고정 인스턴스 + Undertow)을 반영한 thread pool 튜닝 RL 환경을 큐잉 이론 기반으로 직접 설계·구현", fs: 11.5 },
     { t: "DQN·PPO를 교재 DeZero로 밑바닥 구현 — 알고리즘 동작을 코드 수준에서 검증", fs: 11.5 },
     { t: "실무 표준(임계값 룰)·고정 설정 대비 정량 비교 체계 구축 (시드 분리, 검증 best 체크포인트)", fs: 11.5 },
     { t: "c_base 기준 보상 설계로 '기본값 유지 + 피크 증설' 운영 정책을 보상 함수로 표현", fs: 11.5 },
@@ -874,7 +796,7 @@ function addImg(slide, file, opt, label) {
     { t: "실제 Undertow 기반 Spring Boot 서비스 연동 — 런타임 thread pool 조정 endpoint + JMeter 부하로 정책 검증", fs: 11.5, b: true },
     { t: "향후 확장: 수평 확장이 가능한 환경을 위한 인스턴스 오토스케일링 — 부록 환경으로 동일 프레임워크에서 실험 가능", fs: 11.5 },
     { t: "캡스톤 연구(MSA 로그 이상 탐지)와 통합: 이상 탐지가 찾은 위험 신호를 state에 추가해 장애 선제 대응형 스케일링으로 확장", fs: 11.5, b: true },
-    { t: "실측 트래픽 로그 기반 시뮬레이터 보정 (sim-to-real)", fs: 11.5 },
+    { t: "시뮬레이터 충실도 확장(요청 단위 이산사건·p95 SLA) 및 실측 트래픽 기반 보정 (sim-to-real)", fs: 11.5 },
   ], { x: 5.25, y: 1.35, w: 4.35, h: 3.4 });
   s.addShape(pres.shapes.RECTANGLE, { x: 0.55, y: 4.58, w: 9.05, h: 0.02, fill: { color: ICE } });
   s.addText("제출물: PPT + 프로그램 소스 (autoscaling-rl/, 실행 방법 README 포함)",
